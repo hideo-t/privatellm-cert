@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrivateLLM構築士 3級 模擬試験 | privatellm.jp</title>
+<meta name="description" content="PrivateLLM構築士3級の本番形式模擬試験。40問・60分・自動採点。合格基準70%（28問）。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Barlow:wght@400;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0A1628;
+  --blue: #1246AA;
+  --cyan: #00C8E0;
+  --gold: #E8B84B;
+  --green: #06C755;
+  --red: #E03030;
+  --white: #F5F7FA;
+  --gray: #8892A4;
+  --card: #111D35;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--navy);color:var(--white);font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
+
+/* HEADER */
+.header{background:rgba(10,22,40,0.95);border-bottom:1px solid rgba(0,200,224,0.15);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
+.logo{font-family:'Barlow',sans-serif;font-weight:800;font-size:1rem;color:var(--cyan);text-decoration:none;}
+.logo span{color:var(--white);}
+.timer-wrap{display:flex;align-items:center;gap:0.8rem;}
+.timer-label{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--gray);}
+.timer{font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:600;color:var(--cyan);min-width:70px;text-align:right;}
+.timer.warning{color:var(--gold);}
+.timer.danger{color:var(--red);animation:blink 1s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.progress-bar-wrap{flex:1;max-width:200px;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:3px;transition:width 0.3s;}
+
+/* SCREENS */
+.screen{display:none;padding:2rem;}
+.screen.active{display:block;}
+
+/* START SCREEN */
+.start-inner{max-width:700px;margin:0 auto;text-align:center;padding:3rem 1rem;}
+.start-badge{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(0,200,224,0.1);border:1px solid rgba(0,200,224,0.3);border-radius:100px;padding:0.4rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--cyan);letter-spacing:0.1em;margin-bottom:1.5rem;}
+.start-inner h1{font-family:'Barlow',sans-serif;font-weight:800;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.1;margin-bottom:0.8rem;}
+.start-inner h1 em{font-style:normal;color:var(--cyan);}
+.start-inner p{color:var(--gray);font-size:0.95rem;line-height:1.9;margin-bottom:2rem;}
+.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin:2rem 0;text-align:left;}
+.info-card{background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:1.2rem;}
+.info-card .info-label{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--cyan);letter-spacing:0.1em;margin-bottom:0.4rem;}
+.info-card .info-val{font-family:'Barlow',sans-serif;font-weight:700;font-size:1.2rem;color:var(--white);}
+.info-card .info-sub{font-size:0.8rem;color:var(--gray);margin-top:0.2rem;}
+.btn-start{background:var(--cyan);color:var(--navy);font-family:'Barlow',sans-serif;font-weight:800;font-size:1.1rem;padding:1rem 3rem;border:none;border-radius:8px;cursor:pointer;letter-spacing:0.04em;transition:transform 0.2s,box-shadow 0.2s;width:100%;max-width:400px;}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,200,224,0.35);}
+
+/* EXAM SCREEN */
+.exam-inner{max-width:800px;margin:0 auto;}
+.q-nav{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:2rem;background:var(--card);border-radius:10px;padding:1rem;}
+.q-nav-label{width:100%;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--gray);letter-spacing:0.1em;margin-bottom:0.5rem;}
+.q-dot{width:32px;height:32px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--gray);font-family:'IBM Plex Mono',monospace;font-size:0.75rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;}
+.q-dot:hover{border-color:var(--cyan);color:var(--cyan);}
+.q-dot.answered{background:rgba(18,70,170,0.4);border-color:var(--blue);color:var(--white);}
+.q-dot.current{background:var(--cyan);border-color:var(--cyan);color:var(--navy);font-weight:700;}
+
+.question-card{background:var(--card);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2rem;margin-bottom:1.5rem;}
+.q-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;}
+.q-num{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--cyan);}
+.q-category{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;background:rgba(18,70,170,0.25);color:#7AABFF;border:1px solid rgba(18,70,170,0.4);border-radius:100px;padding:0.2rem 0.7rem;}
+.q-text{font-size:1.05rem;line-height:1.8;color:var(--white);margin-bottom:1.8rem;font-weight:500;}
+.options{display:flex;flex-direction:column;gap:0.8rem;}
+.option{display:flex;align-items:flex-start;gap:1rem;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:1rem 1.2rem;cursor:pointer;transition:all 0.2s;text-align:left;}
+.option:hover{border-color:rgba(0,200,224,0.4);background:rgba(0,200,224,0.05);}
+.option.selected{border-color:var(--cyan);background:rgba(0,200,224,0.1);}
+.option-key{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:0.9rem;color:var(--cyan);flex-shrink:0;width:20px;}
+.option.selected .option-key{color:var(--white);}
+.option-text{font-size:0.95rem;line-height:1.7;color:var(--gray);}
+.option.selected .option-text{color:var(--white);}
+
+.exam-nav{display:flex;gap:1rem;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+.btn-nav{font-family:'Barlow',sans-serif;font-weight:700;font-size:0.95rem;padding:0.8rem 1.8rem;border-radius:8px;cursor:pointer;transition:all 0.2s;border:none;}
+.btn-prev{background:transparent;color:var(--gray);border:1px solid rgba(255,255,255,0.15);}
+.btn-prev:hover{color:var(--white);border-color:var(--white);}
+.btn-next{background:var(--blue);color:var(--white);}
+.btn-next:hover{background:var(--cyan);color:var(--navy);}
+.btn-submit{background:var(--gold);color:var(--navy);}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,184,75,0.3);}
+.q-count{font-family:'IBM Plex Mono',monospace;font-size:0.82rem;color:var(--gray);}
+
+/* RESULT SCREEN */
+.result-inner{max-width:700px;margin:0 auto;text-align:center;padding:2rem 1rem;}
+.result-circle{width:180px;height:180px;border-radius:50%;margin:0 auto 2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.result-circle.pass{background:radial-gradient(circle,rgba(0,200,224,0.2),rgba(10,22,40,0.8));border:4px solid var(--cyan);box-shadow:0 0 48px rgba(0,200,224,0.3);}
+.result-circle.fail{background:radial-gradient(circle,rgba(224,48,48,0.15),rgba(10,22,40,0.8));border:4px solid var(--red);}
+.result-score{font-family:'Barlow',sans-serif;font-weight:800;font-size:3.5rem;line-height:1;}
+.result-score.pass{color:var(--cyan);}
+.result-score.fail{color:var(--red);}
+.result-total{font-size:0.9rem;color:var(--gray);margin-top:0.3rem;}
+.result-verdict{font-family:'Barlow',sans-serif;font-weight:800;font-size:1.8rem;margin-bottom:0.5rem;}
+.result-verdict.pass{color:var(--cyan);}
+.result-verdict.fail{color:var(--red);}
+.result-msg{color:var(--gray);font-size:0.95rem;line-height:1.8;margin-bottom:2rem;}
+
+.result-breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:2rem 0;text-align:left;}
+.breakdown-card{background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:1.2rem;}
+.breakdown-label{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--cyan);letter-spacing:0.08em;margin-bottom:0.4rem;}
+.breakdown-val{font-family:'Barlow',sans-serif;font-weight:700;font-size:1.3rem;}
+.breakdown-sub{font-size:0.78rem;color:var(--gray);margin-top:0.2rem;}
+
+.review-section{text-align:left;margin-top:2.5rem;}
+.review-title{font-family:'Barlow',sans-serif;font-weight:800;font-size:1.2rem;color:var(--white);margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(0,200,224,0.2);}
+.review-item{background:var(--card);border-radius:10px;padding:1.2rem;margin-bottom:1rem;border-left:3px solid transparent;}
+.review-item.correct{border-left-color:var(--green);}
+.review-item.incorrect{border-left-color:var(--red);}
+.review-q{font-size:0.9rem;color:var(--white);line-height:1.7;margin-bottom:0.8rem;}
+.review-answers{display:flex;flex-direction:column;gap:0.4rem;font-size:0.82rem;}
+.review-your{color:var(--red);}
+.review-your.correct-ans{color:var(--green);}
+.review-correct{color:var(--green);}
+.review-explain{font-size:0.82rem;color:var(--gray);margin-top:0.6rem;line-height:1.6;padding:0.6rem;background:rgba(255,255,255,0.03);border-radius:6px;}
+
+.result-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:2rem;}
+.btn-retry{background:transparent;color:var(--gray);font-family:'Barlow',sans-serif;font-weight:700;font-size:0.95rem;padding:0.8rem 1.8rem;border:1px solid rgba(255,255,255,0.15);border-radius:8px;cursor:pointer;transition:all 0.2s;}
+.btn-retry:hover{color:var(--white);border-color:var(--white);}
+.btn-line-result{background:#06C755;color:var(--navy);font-family:'Barlow',sans-serif;font-weight:800;font-size:1rem;padding:0.9rem 2rem;border:none;border-radius:8px;cursor:pointer;transition:all 0.2s;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;}
+
+/* CERT PREVIEW SECTION */
+.cert-section{background:var(--card);border:1px solid rgba(232,184,75,0.3);border-radius:16px;padding:2rem;margin:2rem 0;text-align:center;}
+.cert-section-label{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--gold);letter-spacing:0.15em;margin-bottom:0.8rem;}
+.cert-section h3{font-family:'Barlow',sans-serif;font-weight:800;font-size:1.3rem;color:var(--white);margin-bottom:0.4rem;}
+.cert-section p{font-size:0.88rem;color:var(--gray);margin-bottom:1.5rem;line-height:1.7;}
+.cert-id-display{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--gold);background:rgba(232,184,75,0.08);border:1px solid rgba(232,184,75,0.25);border-radius:8px;padding:0.8rem 1.5rem;display:inline-block;letter-spacing:0.1em;margin-bottom:1.5rem;cursor:pointer;transition:all 0.2s;position:relative;}
+.cert-id-display:hover{background:rgba(232,184,75,0.15);}
+.cert-id-copied{font-size:0.72rem;color:var(--green);position:absolute;top:-22px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity 0.3s;white-space:nowrap;}
+.cert-id-copied.show{opacity:1;}
+
+/* Blurred cert preview */
+.cert-blur-wrap{position:relative;display:inline-block;width:100%;max-width:500px;margin:0 auto 1.5rem;}
+.cert-blur-inner{filter:blur(5px);pointer-events:none;user-select:none;-webkit-user-select:none;}
+.cert-blur-inner *{pointer-events:none;}
+.cert-blur-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.6rem;background:rgba(10,22,40,0.45);backdrop-filter:blur(2px);}
+.cert-blur-badge{font-family:'Barlow',sans-serif;font-weight:800;font-size:1rem;color:var(--white);background:rgba(232,184,75,0.9);color:var(--navy);border-radius:100px;padding:0.4rem 1.2rem;letter-spacing:0.05em;}
+.cert-blur-sub{font-size:0.8rem;color:rgba(255,255,255,0.8);}
+
+/* Mini cert (for preview in exam) */
+.mini-cert{width:100%;aspect-ratio:1.414;background:linear-gradient(135deg,#FBF8F0,#F5EFE0);border-radius:6px;position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
+.mini-cert-header{background:linear-gradient(135deg,#0A1628,#1246AA);height:18%;display:flex;align-items:center;justify-content:space-between;padding:0 6%;}
+.mini-cert-header-text{font-family:'Cinzel',serif;font-size:clamp(5px,1.2vw,8px);color:rgba(255,255,255,0.7);letter-spacing:0.1em;}
+.mini-cert-header-logo{font-family:'Cinzel',serif;font-size:clamp(5px,1.5vw,10px);color:#E8C97A;font-weight:700;}
+.mini-cert-gold-line{height:2px;background:linear-gradient(90deg,transparent,#C9A84C,#E8C97A,#C9A84C,transparent);}
+.mini-cert-body{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3% 5%;height:64%;}
+.mini-cert-label{font-family:'Cinzel',serif;font-size:clamp(4px,0.9vw,6px);letter-spacing:0.3em;color:#8B6914;margin-bottom:2%;}
+.mini-cert-name{font-family:'Noto Serif JP',serif;font-size:clamp(10px,3vw,20px);font-weight:700;color:#0A1628;letter-spacing:0.05em;}
+.mini-cert-grade{background:linear-gradient(135deg,#0A1628,#1246AA);border:1px solid #C9A84C;border-radius:3px;padding:2% 5%;margin-top:2%;}
+.mini-cert-grade-name{font-family:'Cinzel',serif;font-size:clamp(5px,1.2vw,8px);color:#E8C97A;letter-spacing:0.05em;text-align:center;}
+.mini-cert-grade-ja{font-family:'Noto Serif JP',serif;font-size:clamp(4px,1vw,7px);color:rgba(255,255,255,0.7);text-align:center;margin-top:1px;}
+.mini-cert-bottom{height:18%;display:flex;align-items:center;justify-content:space-between;padding:0 6%;border-top:1px solid rgba(201,168,76,0.2);}
+.mini-cert-id{font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.9vw,6px);color:#6B7280;}
+.mini-cert-seal{width:clamp(20px,5vw,36px);height:clamp(20px,5vw,36px);border-radius:50%;background:linear-gradient(135deg,#0A1628,#1246AA);border:1px solid #C9A84C;display:flex;align-items:center;justify-content:center;}
+.mini-cert-seal-text{font-family:'Cinzel',serif;font-size:clamp(3px,0.7vw,5px);color:#E8C97A;text-align:center;line-height:1.3;}
+.mini-cert-qr{width:clamp(18px,4vw,28px);height:clamp(18px,4vw,28px);background:white;display:flex;align-items:center;justify-content:center;font-size:clamp(10px,2.5vw,18px);}
+
+.btn-stripe{background:linear-gradient(135deg,#8B6914,#C9A84C,#E8C97A);color:var(--navy);font-family:'Barlow',sans-serif;font-weight:800;font-size:1.1rem;padding:1rem 2.5rem;border:none;border-radius:10px;cursor:pointer;transition:all 0.2s;width:100%;max-width:420px;letter-spacing:0.03em;box-shadow:0 4px 20px rgba(201,168,76,0.3);}
+.btn-stripe:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(201,168,76,0.4);}
+.stripe-note{font-size:0.75rem;color:var(--gray);margin-top:0.5rem;}
+.stripe-note a{color:var(--gold);text-decoration:none;}
+
+@media(max-width:600px){
+  .screen{padding:0.8rem;}
+  .info-grid{grid-template-columns:1fr 1fr;}
+  .result-breakdown{grid-template-columns:1fr 1fr;}
+  /* 問題ナビ：モバイルは折りたたみ */
+  .q-nav{gap:0.25rem;padding:0.6rem;}
+  .q-nav-label{font-size:0.65rem;}
+  .q-dot{width:26px;height:26px;font-size:0.68rem;border-radius:4px;}
+  /* 問題カード */
+  .question-card{padding:1rem;}
+  .q-text{font-size:0.95rem;margin-bottom:1.2rem;}
+  .option{padding:0.75rem 0.9rem;gap:0.7rem;}
+  .option-text{font-size:0.9rem;}
+  /* ナビボタン */
+  .exam-nav{flex-direction:column;gap:0.6rem;}
+  .btn-nav{width:100%;text-align:center;padding:0.9rem;}
+  /* ヘッダー */
+  .header{padding:0.7rem 1rem;}
+  .logo{font-size:0.88rem;}
+  .timer{font-size:1.1rem;}
+  .timer-label{display:none;}
+  .progress-bar-wrap{max-width:120px;}
+  /* スタート画面 */
+  .start-inner{padding:2rem 0.5rem;}
+  .start-inner h1{font-size:1.6rem;}
+  .info-card{padding:0.9rem;}
+  .info-card .info-val{font-size:1rem;}
+  /* 結果画面 */
+  .result-circle{width:140px;height:140px;}
+  .result-score{font-size:2.8rem;}
+  .result-verdict{font-size:1.4rem;}
+  .result-breakdown{grid-template-columns:1fr 1fr;}
+  .result-actions{flex-direction:column;}
+  .btn-retry,.btn-line-result{width:100%;justify-content:center;}
+  /* 解説 */
+  .review-item{padding:0.9rem;}
+  .review-q{font-size:0.85rem;}
+}
+@media(max-width:380px){
+  .q-dot{width:22px;height:22px;font-size:0.62rem;}
+  .info-grid{grid-template-columns:1fr;}
+  .result-breakdown{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="https://privatellm.jp" class="logo">Private<span>LLM</span>.jp</a>
+  <div class="timer-wrap">
+    <div class="progress-bar-wrap" id="progressBar" style="display:none;">
+      <div class="progress-bar" id="progressFill" style="width:0%"></div>
+    </div>
+    <span class="timer-label" id="timerLabel" style="display:none;">残り時間</span>
+    <span class="timer" id="timer" style="display:none;">60:00</span>
+  </div>
+</header>
+
+<!-- START -->
+<div class="screen active" id="screenStart">
+  <div class="start-inner">
+    <div class="start-badge">🎯 模擬試験 — 本番形式</div>
+    <h1>PrivateLLM構築士<br><em>3級 模擬試験</em></h1>
+    <p>本番と同じ形式・同じ難易度・自動採点。<br>合格基準は<strong style="color:var(--white)">70%以上（40問中28問正解）</strong>です。</p>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">出題数</div>
+        <div class="info-val">40問</div>
+        <div class="info-sub">4択・全問必答</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">制限時間</div>
+        <div class="info-val">60分</div>
+        <div class="info-sub">時間切れ自動提出</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">合格基準</div>
+        <div class="info-val">28問以上</div>
+        <div class="info-sub">正解率70%以上</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">結果</div>
+        <div class="info-val">即時採点</div>
+        <div class="info-sub">解説付き</div>
+      </div>
+    </div>
+    <button class="btn-start" onclick="startExam()">試験を開始する →</button>
+    <p style="margin-top:1rem;font-size:0.82rem;color:#4A5568;">※ 回答はブラウザ内で完結します。外部に送信されません。</p>
+  </div>
+</div>
+
+<!-- EXAM -->
+<div class="screen" id="screenExam">
+  <div class="exam-inner">
+    <div class="q-nav" id="qNav">
+      <div class="q-nav-label">問題一覧（クリックでジャンプ）</div>
+    </div>
+    <div class="question-card" id="questionCard">
+    </div>
+    <div class="exam-nav">
+      <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQ()">← 前の問題</button>
+      <span class="q-count" id="qCount"></span>
+      <button class="btn-nav btn-next" id="btnNext" onclick="nextQ()">次の問題 →</button>
+      <button class="btn-nav btn-submit" id="btnSubmit" onclick="confirmSubmit()" style="display:none;">採点する ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="screenResult">
+  <div class="result-inner">
+    <div class="result-circle" id="resultCircle">
+      <span class="result-score" id="resultScore"></span>
+      <span class="result-total">/ 40問</span>
+    </div>
+    <div class="result-verdict" id="resultVerdict"></div>
+    <div class="result-msg" id="resultMsg"></div>
+    <div class="result-breakdown">
+      <div class="breakdown-card">
+        <div class="breakdown-label">正解数</div>
+        <div class="breakdown-val" id="bdCorrect">—</div>
+        <div class="breakdown-sub">問</div>
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-label">正解率</div>
+        <div class="breakdown-val" id="bdRate">—</div>
+        <div class="breakdown-sub">（合格：70%以上）</div>
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-label">所要時間</div>
+        <div class="breakdown-val" id="bdTime">—</div>
+        <div class="breakdown-sub">（制限：60分）</div>
+      </div>
+    </div>
+    <!-- CERT SECTION (pass only) -->
+    <div class="cert-section" id="certSection" style="display:none;">
+      <div class="cert-section-label">CERTIFICATE ISSUED</div>
+      <h3>🏆 認定証番号が発行されました</h3>
+      <p>以下の認定証番号を発行しました。<br>決済完了後、認定証発行サイトで番号・氏名・生年月日を入力して認定証を受け取ってください。</p>
+      <div class="cert-id-display" id="certIdDisplay" onclick="copyCertId()">
+        <span class="cert-id-copied" id="copiedMsg">コピーしました！</span>
+        <span id="certIdText">PAPA-3-2026-0001</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--gray);margin-bottom:1.5rem;">↑ タップでコピー</div>
+      <!-- Blurred cert preview -->
+      <div class="cert-blur-wrap">
+        <div class="cert-blur-inner">
+          <div class="mini-cert">
+            <div class="mini-cert-header">
+              <div>
+                <div class="mini-cert-header-text">PRIVATE AI PROMOTION ASSOCIATION</div>
+                <div class="mini-cert-header-text" style="color:rgba(255,255,255,0.4);font-size:0.7em;">プライベートAI推進協会（PAPA）</div>
+              </div>
+              <div class="mini-cert-header-logo">privatellm.jp</div>
+            </div>
+            <div class="mini-cert-gold-line"></div>
+            <div class="mini-cert-body">
+              <div class="mini-cert-label">CERTIFICATE OF ACHIEVEMENT</div>
+              <div style="font-family:serif;font-size:clamp(5px,1vw,7px);color:#6B7280;margin-bottom:1%;">CERTIFIED HOLDER</div>
+              <div class="mini-cert-name" id="miniName">　　　　</div>
+              <div style="width:40%;height:1px;background:linear-gradient(90deg,transparent,#C9A84C,transparent);margin:2% auto;"></div>
+              <div class="mini-cert-grade">
+                <div class="mini-cert-grade-name">PrivateLLM Architect — Level 3</div>
+                <div class="mini-cert-grade-ja">PrivateLLM構築士 3級</div>
+              </div>
+            </div>
+            <div class="mini-cert-bottom">
+              <div class="mini-cert-id" id="miniId">PAPA-3-2026-0001</div>
+              <div class="mini-cert-seal"><div class="mini-cert-seal-text">PAPA<br>認定</div></div>
+              <div class="mini-cert-qr">⬛</div>
+            </div>
+          </div>
+        </div>
+        <div class="cert-blur-overlay">
+          <div class="cert-blur-badge">決済後に受け取れます</div>
+          <div class="cert-blur-sub">認定証番号をメモしてから決済してください</div>
+        </div>
+      </div>
+      <button class="btn-stripe" onclick="goStripe()">🏆 認定証を発行する — ¥8,000（税込）</button>
+      <div class="stripe-note">
+        Stripe決済 ・ クレジットカード / Apple Pay / Google Pay 対応<br>
+        決済後 → <a href="https://cert.privatellm.jp" target="_blank">cert.privatellm.jp</a> で認定証を受け取り
+      </div>
+    </div>
+    <div class="result-actions">
+      <button class="btn-retry" onclick="retryExam()">もう一度挑戦する</button>
+      <a href="https://line.me/R/ti/p/@609awsbq" target="_blank" class="btn-line-result">
+        <svg width="18" height="18" viewBox="0 0 48 48" fill="currentColor"><path d="M24 4C12.95 4 4 11.9 4 21.5c0 6.6 4.2 12.4 10.5 15.7L12 40l7.2-3.2c1.5.4 3.1.6 4.8.6 11.05 0 20-7.9 20-17.5S35.05 4 24 4z"/></svg>
+        LINEで合格通知を受け取る
+      </a>
+    </div>
+    <div class="review-section">
+      <div class="review-title">📋 解答・解説</div>
+      <div id="reviewList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  // 第1章：プライベートLLMの基礎概念（10問）
+  {cat:"基礎概念",q:"LLMの正式名称として正しいものはどれか。",opts:["Large Learning Machine","Large Language Model","Local Learning Module","Linear Language Method"],ans:1,exp:"LLMはLarge Language Model（大規模言語モデル）の略称です。膨大なテキストデータで学習したAIモデルを指します。"},
+  {cat:"基礎概念",q:"プライベートLLMの最大のメリットとして最も適切なものはどれか。",opts:["無料で利用できる","データが外部サーバーに送信されない","常に最新のモデルが使える","設定が一切不要である"],ans:1,exp:"プライベートLLMは社内・オンプレミス環境で動作するため、入力データが外部に送信されません。これが情報漏洩リスクをほぼゼロにできる最大の特徴です。"},
+  {cat:"基礎概念",q:"オープンソースLLMの説明として正しいものはどれか。",opts:["Googleだけが開発している","誰でも無料で利用・改変できるAIモデル","クラウドサービスとして提供されるAI","有料のAPIのみで利用できるモデル"],ans:1,exp:"オープンソースLLMはソースコードとモデルウェイトが公開されており、無料で利用・改変できます。Llama・Mistral・Gemmaなどが代表例です。"},
+  {cat:"基礎概念",q:"Meta社が開発したオープンソースLLMはどれか。",opts:["GPT-4","Gemini","Llama","Claude"],ans:2,exp:"LlamaはMeta（旧Facebook）が開発したオープンソースLLMです。世界で最も広く使われているオープンソースモデルの一つです。"},
+  {cat:"基礎概念",q:"LLMが文章を生成する際の基本的な仕組みとして正しいものはどれか。",opts:["インターネットをリアルタイム検索して回答する","入力された文章の次に来る言葉を予測して生成する","人間がリアルタイムで回答を入力している","データベースから固定の回答を返す"],ans:1,exp:"LLMはトランスフォーマー構造を用い、学習データから「次の単語の確率」を予測することで自然な文章を生成します。"},
+  {cat:"基礎概念",q:"Googleが開発した軽量オープンソースLLMはどれか。",opts:["Llama","Mistral","Gemma","Phi"],ans:2,exp:"GemmaはGoogleが開発した軽量オープンソースモデルです。小型GPUでも動作可能な点が特徴です。"},
+  {cat:"基礎概念",q:"クラウドLLMとプライベートLLMを比較した場合、クラウドLLMのデメリットとして最も適切なものはどれか。",opts:["利用開始に時間がかかる","大量利用時にコストが膨張する","インターネット接続が不要","カスタマイズが自由にできる"],ans:1,exp:"クラウドLLMは従量課金制のため、利用量が増えるほどコストが増大します。大量利用時には月数十〜数百万円に膨張するケースもあります。"},
+  {cat:"基礎概念",q:"Microsoftが開発した超軽量LLMシリーズはどれか。",opts:["Qwen","Gemma","Llama","Phi"],ans:3,exp:"PhiはMicrosoftが開発した超軽量LLMシリーズです。低スペックの端末でも動作可能な点が特徴です。"},
+  {cat:"基礎概念",q:"プライベートLLMがインターネット接続なしで動作できる理由はどれか。",opts:["常にクラウドにバックアップしているから","モデルと処理が全てローカル環境で完結するから","衛星通信を使用しているから","キャッシュに全ての回答が保存されているから"],ans:1,exp:"プライベートLLMはモデルファイルとすべての計算処理がローカルマシン上で完結するため、インターネット接続が不要です。"},
+  {cat:"基礎概念",q:"Alibaba（中国）が開発した日本語・中国語に強いオープンソースLLMはどれか。",opts:["Llama","Phi","Qwen","Mistral"],ans:2,exp:"QwenはAlibaba Cloudが開発したオープンソースLLMで、日本語・中国語・英語など多言語に強い特徴があります。"},
+
+  // 第2章：セキュリティ・コンプライアンス（8問）
+  {cat:"セキュリティ",q:"クラウドAIに社内データを入力した場合のリスクとして最も適切なものはどれか。",opts:["処理速度が低下する","情報が外部サーバーに送信・保存される可能性がある","ローカルストレージが消費される","ライセンス費用が発生する"],ans:1,exp:"クラウドAIに入力したデータは外部サーバーに送信されます。機密情報・個人情報・営業秘密などが漏洩するリスクがあります。"},
+  {cat:"セキュリティ",q:"EU AI Actの説明として正しいものはどれか。",opts:["アメリカが制定したAIの輸出規制法","EUが2024年に施行した世界初の包括的AI規制法","日本のAI安全基準法","中国のAI開発促進法"],ans:1,exp:"EU AI Act（EU AI規制法）は2024年に施行された世界初の包括的なAI規制法です。AIをリスクレベルで分類し、高リスクAIには厳格な要件を課します。"},
+  {cat:"セキュリティ",q:"GDPRに違反した場合の最大制裁金として正しいものはどれか。",opts:["年間売上高の1%","年間売上高の4%","固定で100万ユーロ","制裁金は設定されていない"],ans:1,exp:"GDPRの最大制裁金は年間売上高の4%または2,000万ユーロの高い方です。日本企業もEU域内の個人データを扱う場合は対象となります。"},
+  {cat:"セキュリティ",q:"医療機関でプライベートLLMを導入する主な理由として最も適切なものはどれか。",opts:["処理速度がクラウドより速いから","患者情報を外部送信せずにAIを活用できるから","無料で使えるから","操作が簡単だから"],ans:1,exp:"医療機関では患者の個人情報・カルテ情報の外部送信が法規制上禁止・制限されています。プライベートLLMにより情報漏洩リスクゼロでAIを活用できます。"},
+  {cat:"セキュリティ",q:"社内AIガバナンスに含まれるものとして最も適切なものはどれか。",opts:["AIシステムのデザイン規定","AI利用ルール・管理体制・責任体制の整備","AIの広告出稿基準","AIハードウェアの保証規定"],ans:1,exp:"社内AIガバナンスとは、AIの利用ルール、管理体制、責任の所在を明確にした社内規定・体制のことです。何をAIに入力してよいか、問題発生時の責任者などを定めます。"},
+  {cat:"セキュリティ",q:"個人情報保護法に関する説明として正しいものはどれか。",opts:["日本企業のみに適用される","AIに個人情報を入力・処理させる際も適用される","クラウドサービスには適用されない","2030年に廃止予定"],ans:1,exp:"日本の個人情報保護法は、AIを含むあらゆる情報処理において適用されます。クラウドAIへの個人情報入力も規制対象になりえます。"},
+  {cat:"セキュリティ",q:"金融機関がプライベートLLMを採用する主な理由はどれか。",opts:["コストが安いから","顧客情報・取引データの外部送信規制に対応するため","操作画面が使いやすいから","Googleが推奨しているから"],ans:1,exp:"金融機関では顧客情報や取引データの外部送信が厳しく規制されています。プライベートLLMにより規制に対応しながらAIを活用できます。"},
+  {cat:"セキュリティ",q:"「高リスクAI」に対してEU AI Actが求めるものとして最も適切なものはどれか。",opts:["即時使用禁止","厳格な要件（透明性・ログ記録・人間監視等）の遵守","EU加盟国への登録のみ","年間報告書の提出のみ"],ans:1,exp:"EU AI Actは採用・医療・重要インフラなどに使われる「高リスクAI」に対し、透明性の確保・人間による監視・ログ記録など厳格な要件を課しています。"},
+
+  // 第3章：導入判断と費用対効果（8問）
+  {cat:"導入判断",q:"プライベートLLM導入に最も向いているケースはどれか。",opts:["1日だけAIを試したい","機密情報を扱い法規制が厳しい業種での大量AI活用","旅行先の観光情報を調べる","個人ブログの記事を書く"],ans:1,exp:"機密データを大量に扱い、かつ法規制で外部送信が制限されている業種（医療・金融・法律・行政）での継続的なAI活用がプライベートLLMの最適ユースケースです。"},
+  {cat:"導入判断",q:"ROI（投資対効果）の観点から、プライベートLLMへの移行を検討すべき月額APIコストの目安はどれか。",opts:["月1,000円以上","月10,000円以上","月300,000円以上","月10,000,000円以上"],ans:2,exp:"一般的に月のAPI利用料が30万円（300,000円）を超える規模では、プライベートLLMへの移行で1〜2年以内にコスト回収できるケースが多いとされています。"},
+  {cat:"導入判断",q:"プライベートLLM導入の損益分岐点として一般的な期間はどれか。",opts:["1週間程度","1ヶ月程度","1〜2年程度","10年以上"],ans:2,exp:"初期のGPU購入などの設備投資はかかりますが、その後のランニングコストが低いため、一般的に1〜2年程度で損益分岐点を迎えるケースが多いです。"},
+  {cat:"導入判断",q:"VRAM（ビデオメモリ）の説明として正しいものはどれか。",opts:["CPUに搭載されたメモリ","GPUに搭載されたメモリで、LLMの動作に必要","ハードディスクの一種","ネットワークの通信速度単位"],ans:1,exp:"VRAMはGPU（グラフィックスカード）に搭載されたメモリです。LLMを動かす際、モデルをVRAMに展開する必要があり、VRAMが多いほど大きなモデルを動かせます。"},
+  {cat:"導入判断",q:"7BパラメータのLLMをOllamaで動かす際に必要なVRAMの目安はどれか。",opts:["約1GB","約8GB","約100GB","VRAMは不要"],ans:1,exp:"7B（70億パラメータ）モデルをFP16で動かす場合、約14GB必要ですが、量子化（4bit）により約4〜8GB程度で動作可能です。一般的に8GB前後が目安とされます。"},
+  {cat:"導入判断",q:"プライベートLLM導入ステップの正しい順序はどれか。",opts:["本番導入→PoC→目的定義→継続改善","目的・要件定義→PoC→検証→本番導入→継続改善","PoC→目的定義→本番導入→検証→継続改善","検証→PoC→目的定義→本番導入→継続改善"],ans:1,exp:"正しい順序は「目的・要件定義→PoC（小規模テスト）→検証→本番導入→継続改善」です。いきなり本番導入するとリスクが高くなります。"},
+  {cat:"導入判断",q:"プライベートLLMのランニングコストに含まれるものとして最も適切なものはどれか。",opts:["APIの従量課金","サーバーの電気代・保守費","モデルの購入費","トークン処理料金"],ans:1,exp:"プライベートLLMのランニングコストは主にサーバー（GPU）の電気代と保守費用です。クラウドAPIのような従量課金は発生しません。"},
+  {cat:"導入判断",q:"PoC（概念実証）の説明として正しいものはどれか。",opts:["本番システムの最終テスト","本番導入前に小規模で実現可能性を検証すること","製品の特許申請","プログラムのバグ修正作業"],ans:1,exp:"PoCはProof of Conceptの略で、本番導入前に小規模な環境で「本当に機能するか」を検証するフェーズです。リスクを最小化するために重要なステップです。"},
+
+  // 第4章：主要ツール・技術（8問）
+  {cat:"ツール・技術",q:"Ollamaの説明として正しいものはどれか。",opts:["クラウドAIの課金管理ツール","ローカル環境でLLMを簡単に動かすオープンソースツール","画像生成専用のAIツール","データベース管理システム"],ans:1,exp:"OllamaはローカルPC上でLLMを簡単に動かすためのオープンソースツールです。コマンド一つでモデルをダウンロードして実行でき、Windows・Mac・Linuxに対応しています。"},
+  {cat:"ツール・技術",q:"RAG（Retrieval-Augmented Generation）の目的として正しいものはどれか。",opts:["モデルを軽量化してVRAMを削減する","社内文書などをLLMに参照させて回答精度を上げる","GPUの処理速度を向上させる","モデルを追加学習させてカスタマイズする"],ans:1,exp:"RAGは社内文書・マニュアル・データベースをベクトル化して保存し、質問と関連する文書をリアルタイムで検索してLLMに渡す技術です。モデルの再学習なしに社内知識を活用できます。"},
+  {cat:"ツール・技術",q:"量子化（Quantization）の主な効果はどれか。",opts:["モデルの精度を大幅に向上させる","必要VRAMとファイルサイズを削減する","インターネット速度を上げる","GPUの寿命を延ばす"],ans:1,exp:"量子化はモデルの数値精度を下げる技術です（例：FP16→INT4）。ファイルサイズと必要VRAMを大幅に削減でき、低スペック環境でも動作可能になります。精度は多少低下しますが実用上問題ない場合が多いです。"},
+  {cat:"ツール・技術",q:"vLLMが特に適している用途はどれか。",opts:["個人PC上での学習・実験","企業環境での大規模・高並列処理","スマートフォンでの軽量動作","画像の生成・編集"],ans:1,exp:"vLLMは高速かつ多並列処理に最適化されたLLM推論フレームワークです。多数のユーザーが同時アクセスする企業の本番環境に適しています。"},
+  {cat:"ツール・技術",q:"Difyの説明として最も適切なものはどれか。",opts:["GPU製造メーカーのブランド名","ノーコード・ローコードでAIアプリを構築できるプラットフォーム","オープンソースのLLMモデル名","クラウドストレージサービス"],ans:1,exp:"DifyはLLMを活用したアプリケーションをGUI操作で構築できるオープンソースプラットフォームです。RAG構築・ワークフロー設計・チャットボット作成などをノーコードで実現できます。"},
+  {cat:"ツール・技術",q:"LibreChatの説明として正しいものはどれか。",opts:["高速LLM推論フレームワーク","ChatGPT風UIを社内プライベートLLMで実現するチャットツール","LLMモデルのトレーニングツール","ベクトルデータベース"],ans:1,exp:"LibreChatはChatGPTのような使い勝手を社内のプライベートLLMで実現するオープンソースのチャットインターフェースです。複数モデルの切り替えや会話履歴管理が可能です。"},
+  {cat:"ツール・技術",q:"RAGにおける「ベクトル化」の説明として正しいものはどれか。",opts:["テキストを音声に変換すること","テキストを数値の配列（ベクトル）に変換して類似度検索を可能にすること","データを圧縮して小さくすること","文章を別の言語に翻訳すること"],ans:1,exp:"ベクトル化（エンベディング）とは、テキストを多次元の数値配列に変換することです。これにより「意味的に近い文書」を高速に検索できるようになります。RAGの核心技術です。"},
+  {cat:"ツール・技術",q:"Q4（4bit量子化）について正しい説明はどれか。",opts:["モデルの精度を4倍に向上させる技術","モデルを4つに分割して処理する技術","FP32の精度を4bitに落とし約1/8のサイズにする技術","4GBのVRAMでのみ動作する制限"],ans:2,exp:"Q4（INT4量子化）はモデルの重みを32bitから4bitの精度に変換する技術です。ファイルサイズと必要VRAMをFP32比で約1/8程度に削減できます（FP16比では約1/4）。"},
+
+  // 第5章：ビジネス活用事例（6問）
+  {cat:"活用事例",q:"ハルシネーション（幻覚）の説明として正しいものはどれか。",opts:["AIが感情を持って怒り出すこと","LLMが事実でない内容を自信満々に生成する現象","GPUが過熱して誤動作すること","データが消失するエラーの一種"],ans:1,exp:"ハルシネーションはLLMが存在しない情報や誤った事実を「確信を持って」生成してしまう現象です。重要情報には必ず人間による確認（ヒューマンインザループ）が必要です。"},
+  {cat:"活用事例",q:"ハルシネーション対策として最も効果的なものはどれか。",opts:["GPUをより高性能なものに交換する","RAGで正確な情報源を参照させ重要情報は人間が確認する","LLMをより大きなモデルに変更する","インターネット接続を切断する"],ans:1,exp:"ハルシネーション対策の核心は、RAGで信頼できる情報源をLLMに参照させることと、重要な出力には必ず人間が確認するヒューマンインザループを設けることです。"},
+  {cat:"活用事例",q:"製造業でプライベートLLMを活用する事例として最も適切なものはどれか。",opts:["競合他社の製品情報を入手する","製品マニュアルをRAG化して現場のトラブルシューティングを自動化する","従業員の個人情報を分析する","株価を予測する"],ans:1,exp:"製造業では製品マニュアル・設計図・保守手順書をRAG化し、現場作業員が音声やテキストで質問するとAIが即回答するシステムが広く活用されています。"},
+  {cat:"活用事例",q:"マルチモーダルAIの説明として正しいものはどれか。",opts:["複数の言語（多言語）に対応したAI","テキスト以外に画像・音声・動画なども処理できるAI","複数の企業が共同開発したAI","複数のGPUを並列使用するAI"],ans:1,exp:"マルチモーダルAIは「複数のモダリティ（形式）」を扱えるAIです。テキストだけでなく画像・音声・動画なども入力・出力できます。製品検品・設計図分析などに活用されます。"},
+  {cat:"活用事例",q:"プライベートLLMのセキュリティ設定で最も重要なものはどれか。",opts:["画面の明るさとフォントサイズの調整","ファイアウォールとアクセス制御の適切な設定","キーボードのショートカット設定","デスクトップの壁紙変更"],ans:1,exp:"ローカルLLMのAPIを社外からアクセス可能な状態にしてしまうミスが多発しています。ファイアウォールによる通信制限とアクセス制御（認証）の設定が必須です。"},
+  {cat:"活用事例",q:"社内FAQシステムにプライベートLLMを活用するメリットとして最も適切なものはどれか。",opts:["社員全員のAIスキルが自動的に向上する","機密情報を外部送信せずに24時間自動回答できる","人事部門が不要になる","会議の開催回数が増える"],ans:1,exp:"社内規定・マニュアル・人事制度などをRAG化することで、機密情報を外部サーバーに送信せずに24時間自動回答するFAQシステムが構築できます。問い合わせ対応コストの大幅削減が期待できます。"},
+
+  // 総合問題（6問）
+  {cat:"総合",q:"ある中小企業が「社員50名が毎日ChatGPTを業務で使っており月額APIコストが50万円かかっている。機密データも入力している。」という状況にある。最も適切なアドバイスはどれか。",opts:["現状維持で問題ない","コスト削減と情報漏洩対策のためプライベートLLMへの移行を検討すべき","さらに多くのAPIサービスを契約すべき","AI利用を全面禁止すべき"],ans:1,exp:"月50万円のAPIコストはプライベートLLM移行で大幅削減できます。また機密データの外部送信は情報漏洩リスクがあり、プライベートLLMで解決できます。1〜2年でコスト回収可能です。"},
+  {cat:"総合",q:"プライベートLLM構築士3級の出題範囲に含まれないものはどれか。",opts:["プライベートLLMの基礎概念","セキュリティ・コンプライアンス","Ollamaの実際のインストール・設定手順","ビジネス活用事例"],ans:2,exp:"3級はビジネスパーソン向けの資格であり、概念理解・判断力・活用知識が問われます。Ollamaの実際のインストール・設定などの実装スキルは2級の出題範囲です。"},
+  {cat:"総合",q:"「ファインチューニング」と「RAG」の違いとして正しいものはどれか。",opts:["両者は全く同じ技術","ファインチューニングはモデルを再学習する。RAGは再学習せず文書参照で対応","RAGはモデルを再学習する。ファインチューニングは再学習しない","どちらもインターネット検索を使う技術"],ans:1,exp:"ファインチューニングはモデル自体を追加データで再学習する技術（コスト・時間が必要）。RAGはモデルを再学習せず、外部の文書をリアルタイムで参照させる技術（低コスト・即時対応可能）。"},
+  {cat:"総合",q:"プライベートAI推進協会（PAPA）が認定する資格の最上位はどれか。",opts:["PrivateLLM構築士3級","PrivateLLM構築士2級","PrivateLLM構築士1級","PrivateLLM認定講師"],ans:3,exp:"PrivateLLM認定講師はPrivateLLM構築士資格体系の最上位に位置し、2級以上の取得者が審査・面接を経て取得できます。企業研修の開講権や公式ロゴの使用権が付与されます。"},
+  {cat:"総合",q:"オンプレミスの説明として正しいものはどれか。",opts:["クラウド上にあるサーバーを使う形態","サーバーを自社施設に設置して運用する形態","月額課金のSaaSサービス","インターネット上の仮想マシン"],ans:1,exp:"オンプレミス（On-premises）とは、サーバーやソフトウェアを自社の施設内に設置して運用する形態です。プライベートLLMはオンプレミス環境で動かすことが多いです。クラウドの対義語です。"},
+  {cat:"総合",q:"プライベートLLMを導入した後の「継続改善」フェーズで行うこととして最も適切なものはどれか。",opts:["システムの電源を切って保管する","モデル更新・精度向上・コスト最適化を継続的に行う","導入担当者を解雇する","クラウドAIに戻す"],ans:1,exp:"プライベートLLMの継続改善フェーズでは、新しいモデルへの更新、回答精度の改善、リソース最適化によるコスト削減、セキュリティアップデートなどを継続的に行います。"},
+];
+
+let currentQ = 0;
+let answers = new Array(40).fill(null);
+let startTime = null;
+let timerInterval = null;
+let timeLeft = 60 * 60;
+
+function startExam() {
+  document.getElementById('screenStart').classList.remove('active');
+  document.getElementById('screenExam').classList.add('active');
+  document.getElementById('progressBar').style.display = 'flex';
+  document.getElementById('timerLabel').style.display = 'inline';
+  document.getElementById('timer').style.display = 'inline';
+  startTime = Date.now();
+  buildNav();
+  renderQuestion();
+  startTimer();
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      submitExam();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timeLeft / 60).toString().padStart(2,'0');
+  const s = (timeLeft % 60).toString().padStart(2,'0');
+  const el = document.getElementById('timer');
+  el.textContent = `${m}:${s}`;
+  el.className = 'timer';
+  if (timeLeft <= 300) el.classList.add('danger');
+  else if (timeLeft <= 600) el.classList.add('warning');
+}
+
+function buildNav() {
+  const nav = document.getElementById('qNav');
+  let html = '<div class="q-nav-label">問題一覧（クリックでジャンプ）</div>';
+  for (let i = 0; i < 40; i++) {
+    html += `<button class="q-dot" id="dot${i}" onclick="jumpTo(${i})">${i+1}</button>`;
+  }
+  nav.innerHTML = html;
+}
+
+function updateNav() {
+  for (let i = 0; i < 40; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    dot.className = 'q-dot';
+    if (i === currentQ) dot.classList.add('current');
+    else if (answers[i] !== null) dot.classList.add('answered');
+  }
+  const answered = answers.filter(a => a !== null).length;
+  document.getElementById('progressFill').style.width = `${(answered/40)*100}%`;
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  const selected = answers[currentQ];
+  let opts = '';
+  const keys = ['A','B','C','D'];
+  q.opts.forEach((opt, i) => {
+    opts += `<div class="option${selected===i?' selected':''}" onclick="selectAnswer(${i})">
+      <span class="option-key">${keys[i]}</span>
+      <span class="option-text">${opt}</span>
+    </div>`;
+  });
+  document.getElementById('questionCard').innerHTML = `
+    <div class="q-meta">
+      <span class="q-num">問題 ${currentQ+1} / 40</span>
+      <span class="q-category">${q.cat}</span>
+    </div>
+    <div class="q-text">${q.q}</div>
+    <div class="options">${opts}</div>
+  `;
+  document.getElementById('qCount').textContent = `${answers.filter(a=>a!==null).length} / 40 問回答済み`;
+  const isLast = currentQ === 39;
+  document.getElementById('btnNext').style.display = isLast ? 'none' : 'inline-block';
+  document.getElementById('btnSubmit').style.display = isLast ? 'inline-block' : 'none';
+  document.getElementById('btnPrev').disabled = currentQ === 0;
+  updateNav();
+}
+
+function selectAnswer(idx) {
+  answers[currentQ] = idx;
+  renderQuestion();
+}
+
+function nextQ() { if (currentQ < 39) { currentQ++; renderQuestion(); } }
+function prevQ() { if (currentQ > 0) { currentQ--; renderQuestion(); } }
+function jumpTo(i) { currentQ = i; renderQuestion(); }
+
+function confirmSubmit() {
+  const unanswered = answers.filter(a => a === null).length;
+  if (unanswered > 0) {
+    if (!confirm(`まだ${unanswered}問が未回答です。このまま提出しますか？`)) return;
+  }
+  submitExam();
+}
+
+function submitExam() {
+  clearInterval(timerInterval);
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const em = Math.floor(elapsed/60).toString().padStart(2,'0');
+  const es = (elapsed%60).toString().padStart(2,'0');
+
+  let correct = 0;
+  QUESTIONS.forEach((q,i) => { if (answers[i] === q.ans) correct++; });
+  const rate = Math.round((correct/40)*100);
+  const pass = correct >= 28;
+
+  document.getElementById('screenExam').classList.remove('active');
+  document.getElementById('screenResult').classList.add('active');
+  document.getElementById('timer').style.display = 'none';
+  document.getElementById('timerLabel').style.display = 'none';
+  document.getElementById('progressBar').style.display = 'none';
+
+  const circle = document.getElementById('resultCircle');
+  circle.className = `result-circle ${pass?'pass':'fail'}`;
+  const scoreEl = document.getElementById('resultScore');
+  scoreEl.className = `result-score ${pass?'pass':'fail'}`;
+  scoreEl.textContent = correct;
+
+  const verdict = document.getElementById('resultVerdict');
+  verdict.className = `result-verdict ${pass?'pass':'fail'}`;
+  verdict.textContent = pass ? '✅ 合格' : '❌ 不合格';
+
+  document.getElementById('resultMsg').textContent = pass
+    ? `おめでとうございます！合格基準（70%）を達成しました。本試験の申込受付開始をLINEで通知します。`
+    : `惜しい！あと${28-correct}問正解で合格です。公式テキストで復習してもう一度挑戦しましょう。`;
+
+  document.getElementById('bdCorrect').textContent = correct;
+  document.getElementById('bdRate').textContent = `${rate}%`;
+  document.getElementById('bdTime').textContent = `${em}:${es}`;
+
+  // Review
+  let reviewHTML = '';
+  const keys = ['A','B','C','D'];
+  QUESTIONS.forEach((q,i) => {
+    const userAns = answers[i];
+    const isCorrect = userAns === q.ans;
+    reviewHTML += `
+      <div class="review-item ${isCorrect?'correct':'incorrect'}">
+        <div class="review-q"><strong>Q${i+1}.</strong> ${q.q}</div>
+        <div class="review-answers">
+          <div class="review-your ${isCorrect?'correct-ans':''}">
+            あなたの回答：${userAns!==null?keys[userAns]+'．'+q.opts[userAns]:'未回答'}
+            ${isCorrect?'✅':'❌'}
+          </div>
+          ${!isCorrect?`<div class="review-correct">正解：${keys[q.ans]}．${q.opts[q.ans]}</div>`:''}
+        </div>
+        <div class="review-explain">💡 ${q.exp}</div>
+      </div>`;
+  });
+  document.getElementById('reviewList').innerHTML = reviewHTML;
+  window.scrollTo(0,0);
+
+  // Show cert section on pass
+  if (pass) {
+    const certId = generateCertId();
+    document.getElementById('certIdText').textContent = certId;
+    document.getElementById('miniId').textContent = certId;
+    document.getElementById('certSection').style.display = 'block';
+    window._certId = certId;
+    window._certScore = correct;
+    window._certRate = rate;
+  }
+}
+
+function generateCertId() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const seq = String(Math.floor(Math.random() * 9000) + 1000);
+  return `PAPA-3-${year}-${seq}`;
+}
+
+function copyCertId() {
+  const id = document.getElementById('certIdText').textContent;
+  navigator.clipboard.writeText(id).then(() => {
+    const msg = document.getElementById('copiedMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 2000);
+  }).catch(() => {
+    // fallback
+    const el = document.createElement('textarea');
+    el.value = id;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    const msg = document.getElementById('copiedMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 2000);
+  });
+}
+
+function goStripe() {
+  const certId = window._certId || document.getElementById('certIdText').textContent;
+  // Stripe payment link - add cert_id as parameter
+  // 本番: https://buy.stripe.com/YOUR_LINK?client_reference_id=CERT_ID
+  const stripeUrl = `https://buy.stripe.com/test_placeholder?client_reference_id=${encodeURIComponent(certId)}`;
+  // Show instruction
+  if (confirm(`認定証番号：${certId}
+
+この番号をメモしてから決済に進んでください。
+
+決済完了後、cert.privatellm.jp で認定証を発行できます。
+
+決済ページに進みますか？`)) {
+    window.open('https://cert.privatellm.jp', '_blank');
+  }
+}
+
+function retryExam() {
+  answers = new Array(40).fill(null);
+  currentQ = 0;
+  timeLeft = 60 * 60;
+  document.getElementById('screenResult').classList.remove('active');
+  document.getElementById('screenExam').classList.add('active');
+  document.getElementById('timer').style.display = 'inline';
+  document.getElementById('timerLabel').style.display = 'inline';
+  document.getElementById('progressBar').style.display = 'flex';
+  buildNav();
+  renderQuestion();
+  startTimer();
+}
+</script>
+</body>
+</html>
