@@ -504,6 +504,9 @@ function generateCert() {
   // Show output
   document.getElementById('certOutput').style.display = 'block';
   document.getElementById('certOutput').scrollIntoView({behavior:'smooth', block:'start'});
+  // GASに発行完了を通知
+  const _dob = document.getElementById('inDob').value;
+  markIssuedToGAS(certId, nameJa, nameEn, _dob);
 
   // Update steps
   document.getElementById('s2').className = 'step-num done';
@@ -553,15 +556,24 @@ function shareCert() {
   }
 }
 
-function verifyCert() {
+async function verifyCert() {
   const val = document.getElementById('verifyInput').value.trim();
   const res = document.getElementById('verifyResult');
   if (!val) { res.innerHTML = ''; return; }
-  const parsed = parseCertId(val);
-  if (parsed) {
-    res.innerHTML = `<span class="vok">✅ 有効な形式の認定証番号です｜${parsed.grade.ja}｜発行年：${parsed.year}</span>`;
+  res.innerHTML = '<span style="color:#9CA3AF;">照合中...</span>';
+  const data = await verifyCertFromGAS(val);
+  if (data && data.ok && data.valid) {
+    res.innerHTML = `<span class="vok">✅ 有効な認定証です｜${data.nameJa}（${data.nameEn}）｜${data.grade}｜発行日：${data.issued}｜有効期限：${data.expires}</span>`;
+  } else if (data && data.ok && !data.valid) {
+    res.innerHTML = `<span class="vng">❌ ${data.message || 'この認定証番号は見つかりません'}</span>`;
   } else {
-    res.innerHTML = `<span class="vng">❌ この番号は認識できません。番号をご確認ください。</span>`;
+    // GASが使えない場合はローカルで簡易チェック
+    const parsed = parseCertId(val);
+    if (parsed) {
+      res.innerHTML = `<span class="vok">✅ 有効な形式の認定証番号です｜${parsed.grade.ja}｜発行年：${parsed.year}</span>`;
+    } else {
+      res.innerHTML = `<span class="vng">❌ この番号は認識できません</span>`;
+    }
   }
 }
 
@@ -569,6 +581,56 @@ function verifyCert() {
 if (params.get('verify')) {
   document.getElementById('verifyInput').value = params.get('verify');
   setTimeout(verifyCert, 500);
+}
+</script>
+
+<script>
+// ===== GAS連携 =====
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw_CzhFm5NMSaWNsRVIKNgk3LAEN9h9veaje6x_PxaLwrb1-Kk2gqeDFLzq-IqizjkJ/exec";
+
+// 認定証データ取得（決済確認＋グレード・日付の自動入力）
+async function fetchCertFromGAS(certId, dob) {
+  try {
+    const url = GAS_URL + "?action=getCert&cert_id=" + encodeURIComponent(certId) + "&dob=" + encodeURIComponent(dob||"");
+    const res = await fetch(url);
+    const data = await res.json();
+    return data;
+  } catch(e) {
+    console.warn("GASデータ取得エラー:", e);
+    return null;
+  }
+}
+
+// 発行完了をGASに通知
+async function markIssuedToGAS(certId, nameJa, nameEn, dob) {
+  try {
+    await fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "text/plain"},
+      body: JSON.stringify({
+        action: "issueCert",
+        cert_id: certId,
+        name_ja: nameJa,
+        name_en: nameEn,
+        dob: dob
+      })
+    });
+    console.log("GAS発行記録:", certId);
+  } catch(e) {
+    console.warn("GAS発行記録エラー:", e);
+  }
+}
+
+// 番号照合（verifyフォーム用）
+async function verifyCertFromGAS(certId) {
+  try {
+    const url = GAS_URL + "?action=verify&cert_id=" + encodeURIComponent(certId);
+    const res = await fetch(url);
+    return await res.json();
+  } catch(e) {
+    return { ok: false, valid: false, error: "照合に失敗しました" };
+  }
 }
 </script>
 </body>
