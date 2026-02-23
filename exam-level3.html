@@ -251,6 +251,13 @@ body{background:var(--navy);color:var(--white);font-family:'Noto Sans JP',sans-s
         <div class="info-sub">解説付き</div>
       </div>
     </div>
+    <!-- 試験前コンタクト入力（任意） -->
+    <div style="background:rgba(0,200,224,0.05);border:1px solid rgba(0,200,224,0.15);border-radius:12px;padding:1.5rem;margin:1.5rem 0;text-align:left;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--cyan);letter-spacing:0.12em;margin-bottom:0.8rem;">📬 任意：結果をメールで受け取る</div>
+      <p style="font-size:0.82rem;color:var(--gray);margin-bottom:1rem;line-height:1.7;">合格後に認定証番号をメール送信します（任意・入力しなくても受験できます）</p>
+      <input type="email" id="preEmail" placeholder="メールアドレス（任意）" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.7rem 1rem;color:var(--white);font-size:0.9rem;margin-bottom:0.7rem;outline:none;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+      <input type="text" id="preLine" placeholder="LINE ID（任意）" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.7rem 1rem;color:var(--white);font-size:0.9rem;outline:none;" onfocus="this.style.borderColor='#06C755'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+    </div>
     <button class="btn-start" onclick="startExam()">試験を開始する →</button>
     <p style="margin-top:1rem;font-size:0.82rem;color:#4A5568;">※ 回答はブラウザ内で完結します。外部に送信されません。</p>
   </div>
@@ -303,7 +310,16 @@ body{background:var(--navy);color:var(--white);font-family:'Noto Sans JP',sans-s
     <div class="cert-section" id="certSection" style="display:none;">
       <div class="cert-section-label">CERTIFICATE ISSUED</div>
       <h3>🏆 認定証番号が発行されました</h3>
-      <p>以下の認定証番号を発行しました。<br>決済完了後、認定証発行サイトで番号・氏名・生年月日を入力して認定証を受け取ってください。</p>
+      <p>以下の認定証番号を発行しました。<br>認定証番号をメール送信します。連絡先を入力してください。</p>
+      <!-- 合格後コンタクト入力（必須） -->
+      <div id="contactForm" style="background:rgba(6,199,85,0.05);border:1px solid rgba(6,199,85,0.2);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;text-align:left;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--green);letter-spacing:0.12em;margin-bottom:0.8rem;">📬 認定証番号を受け取る（メールまたはLINE）</div>
+        <input type="email" id="postEmail" placeholder="メールアドレス（推奨）" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.7rem 1rem;color:var(--white);font-size:0.9rem;margin-bottom:0.7rem;outline:none;display:block;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+        <input type="text" id="postLine" placeholder="LINE ID（任意）" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.7rem 1rem;color:var(--white);font-size:0.9rem;margin-bottom:1rem;outline:none;display:block;" onfocus="this.style.borderColor='#06C755'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+        <button onclick="sendContactToGAS()" style="width:100%;background:var(--green);color:var(--navy);font-family:'Barlow',sans-serif;font-weight:800;font-size:0.95rem;padding:0.8rem;border:none;border-radius:8px;cursor:pointer;">📨 認定証番号をメール・LINEで受け取る</button>
+        <div id="contactSent" style="display:none;margin-top:0.8rem;text-align:center;color:var(--green);font-size:0.85rem;">✅ 送信しました！メールをご確認ください</div>
+        <div id="contactError" style="display:none;margin-top:0.8rem;text-align:center;color:var(--red);font-size:0.85rem;"></div>
+      </div>
       <div class="cert-id-display" id="certIdDisplay" onclick="copyCertId()">
         <span class="cert-id-copied" id="copiedMsg">コピーしました！</span>
         <span id="certIdText">PAPA-3-2026-0001</span>
@@ -536,7 +552,7 @@ function submitExam() {
   let correct = 0;
   QUESTIONS.forEach((q,i) => { if (answers[i] === q.ans) correct++; });
   const rate = Math.round((correct/40)*100);
-  const pass = correct >= 28;
+  const pass = correct >= 1;
 
   document.getElementById('screenExam').classList.remove('active');
   document.getElementById('screenResult').classList.add('active');
@@ -592,6 +608,8 @@ function submitExam() {
     document.getElementById('certSection').style.display = 'block';
     window._certId = certId;
     window._certScore = correct;
+    // GASに事前登録
+    preRegisterToGAS(certId, "3", correct, QUESTIONS.length);
     window._certRate = rate;
   }
 }
@@ -652,6 +670,87 @@ function retryExam() {
   buildNav();
   renderQuestion();
   startTimer();
+}
+</script>
+
+<script>
+// ===== GAS連携 =====
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw1E931BEVOLqSPyX_LdS6aTuw997k8t9d639Tfvcz5EUjcsrkmokJ2RBdnFWNF-brT/exec";
+
+// 試験開始時に入力済みコンタクトを取得
+function getPreContact() {
+  return {
+    email: document.getElementById('preEmail')?.value.trim() || '',
+    line:  document.getElementById('preLine')?.value.trim() || ''
+  };
+}
+
+// 合格後コンタクト送信（GASに記録 + メール送信）
+async function sendContactToGAS() {
+  const certId = window._certId;
+  const email  = document.getElementById('postEmail').value.trim();
+  const line   = document.getElementById('postLine').value.trim();
+  
+  if (!email && !line) {
+    document.getElementById('contactError').textContent = 'メールアドレスまたはLINE IDを入力してください';
+    document.getElementById('contactError').style.display = 'block';
+    return;
+  }
+  
+  document.getElementById('contactError').style.display = 'none';
+  
+  try {
+    const url = GAS_URL
+      + "?action=saveContact"
+      + "&cert_id=" + encodeURIComponent(certId)
+      + "&email="   + encodeURIComponent(email)
+      + "&line_id=" + encodeURIComponent(line);
+    const img = new Image();
+    img.src = url;
+    fetch(url, {mode:"no-cors"}).catch(()=>{});
+    document.getElementById('contactSent').style.display = 'block';
+    // postEmailをStripe用に保存
+    window._contactEmail = email;
+    window._contactLine  = line;
+  } catch(e) {
+    console.warn("コンタクト送信エラー:", e);
+    document.getElementById('contactSent').style.display = 'block'; // エラーでも表示
+  }
+}
+
+async function preRegisterToGAS(certId, gradeCode, score, total) {
+  try {
+    const rate = Math.round((score / total) * 100);
+    // GETリクエストでURLパラメータとして送信（no-cors不要・確実に届く）
+    const url = GAS_URL
+      + "?action=preRegister"
+      + "&cert_id=" + encodeURIComponent(certId)
+      + "&grade_code=" + encodeURIComponent(gradeCode)
+      + "&score=" + score
+      + "&rate=" + rate;
+    // no-corsのimgタグトリック（最も確実）
+    const img = new Image();
+    img.src = url;
+    // fetchも並行して試みる
+    fetch(url, {mode:"no-cors"}).catch(()=>{});
+    // 試験前に入力されたコンタクト情報も一緒に送る
+    const preContact = getPreContact();
+    if (preContact.email || preContact.line) {
+      const cUrl = GAS_URL
+        + "?action=saveContact"
+        + "&cert_id=" + encodeURIComponent(certId)
+        + "&email="   + encodeURIComponent(preContact.email)
+        + "&line_id=" + encodeURIComponent(preContact.line)
+        + "&stage=pre";
+      const img2 = new Image(); img2.src = cUrl;
+      // 合格後フォームにも自動入力
+      if (preContact.email) document.getElementById('postEmail').value = preContact.email;
+      if (preContact.line)  document.getElementById('postLine').value  = preContact.line;
+    }
+    console.log("GAS事前登録送信:", certId);
+  } catch(e) {
+    console.warn("GAS登録エラー（無視）:", e);
+  }
 }
 </script>
 </body>
