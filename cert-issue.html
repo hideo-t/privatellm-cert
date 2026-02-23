@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>認定証発行 | cert.privatellm.jp</title>
+<meta name="description" content="PrivateLLM構築士・AI基本検定の認定証を発行するサイト。認定証番号・氏名・生年月日を入力して認定証を受け取れます。 | privatellm.jp">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cinzel:wght@400;600;700&family=Barlow:wght@400;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#0A1628;--blue:#1246AA;--cyan:#00C8E0;
+  --gold:#C9A84C;--gold-l:#E8C97A;--gold-d:#8B6914;
+  --cream:#FBF8F0;--warm:#F5EFE0;--gray:#6B7280;--light:#EEF4FF;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:linear-gradient(160deg,#0D1F3C 0%,#0A1628 100%);color:white;font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
+
+/* ====== HEADER ====== */
+.site-header{background:rgba(10,22,40,0.95);border-bottom:1px solid rgba(201,168,76,0.2);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
+.site-logo{display:flex;align-items:center;gap:0.5rem;text-decoration:none;}
+.site-logo img{height:32px;width:auto;}
+.header-link{font-size:0.82rem;color:rgba(255,255,255,0.5);text-decoration:none;}
+.header-link:hover{color:var(--gold);}
+
+/* ====== MAIN ====== */
+.main{max-width:680px;margin:0 auto;padding:3rem 1.5rem;}
+
+/* Steps */
+.step-wrap{display:flex;gap:0;margin-bottom:3rem;position:relative;}
+.step-wrap::before{content:'';position:absolute;top:20px;left:20px;right:20px;height:1px;background:rgba(255,255,255,0.1);}
+.step{display:flex;flex-direction:column;align-items:center;gap:0.4rem;flex:1;position:relative;}
+.step-num{width:40px;height:40px;border-radius:50%;background:#161B27;border:2px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;color:var(--gray);transition:all 0.3s;z-index:1;}
+.step-num.active{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700;}
+.step-num.done{background:rgba(6,199,85,0.2);border-color:#06C755;color:#06C755;}
+.step-label{font-size:0.72rem;color:var(--gray);text-align:center;font-family:'IBM Plex Mono',monospace;}
+.step-label.active{color:var(--gold);}
+
+/* Cards */
+.card{background:#161B27;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:2rem;margin-bottom:1.5rem;}
+.card-title{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.15em;color:var(--gold);margin-bottom:1.5rem;padding-bottom:0.8rem;border-bottom:1px solid rgba(201,168,76,0.15);}
+
+/* Form */
+.form-group{margin-bottom:1.2rem;}
+.form-label{display:block;font-size:0.78rem;color:#9CA3AF;letter-spacing:0.05em;margin-bottom:0.4rem;font-family:'IBM Plex Mono',monospace;}
+.form-input{width:100%;background:#0D1117;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.8rem 1rem;color:white;font-family:'Noto Sans JP',sans-serif;font-size:0.95rem;transition:border-color 0.2s;}
+.form-input:focus{outline:none;border-color:var(--gold);}
+.form-input.mono{font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;}
+.form-input.readonly{background:rgba(255,255,255,0.03);color:#9CA3AF;cursor:default;}
+.form-hint{font-size:0.75rem;color:var(--gray);margin-top:0.3rem;}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--gold-d),var(--gold),var(--gold-l));color:var(--navy);border:none;border-radius:10px;padding:1rem;font-family:'Barlow',sans-serif;font-weight:800;font-size:1.05rem;cursor:pointer;transition:all 0.2s;letter-spacing:0.03em;}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(201,168,76,0.35);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.btn-secondary{width:100%;background:transparent;color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:0.85rem;font-family:'Barlow',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;transition:all 0.2s;margin-top:0.6rem;}
+.btn-secondary:hover{background:rgba(201,168,76,0.08);}
+
+.error-msg{background:rgba(224,48,48,0.1);border:1px solid rgba(224,48,48,0.3);border-radius:8px;padding:0.8rem 1rem;font-size:0.85rem;color:#F87171;margin-bottom:1rem;display:none;}
+.success-msg{background:rgba(6,199,85,0.1);border:1px solid rgba(6,199,85,0.3);border-radius:8px;padding:0.8rem 1rem;font-size:0.85rem;color:#06C755;margin-bottom:1rem;display:none;}
+
+/* Auto-filled badge */
+.auto-badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.7rem;color:#06C755;background:rgba(6,199,85,0.1);border:1px solid rgba(6,199,85,0.2);border-radius:100px;padding:0.15rem 0.5rem;margin-left:0.5rem;vertical-align:middle;}
+
+/* Orientation selector */
+.orientation-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.orientation-btn{background:#0D1117;border:2px solid rgba(255,255,255,0.1);border-radius:10px;padding:1rem;cursor:pointer;text-align:center;transition:all 0.2s;}
+.orientation-btn:hover{border-color:rgba(201,168,76,0.4);}
+.orientation-btn.selected{border-color:var(--gold);background:rgba(201,168,76,0.06);}
+.orientation-icon{font-size:2rem;margin-bottom:0.4rem;}
+.orientation-label{font-size:0.85rem;color:white;font-weight:500;}
+.orientation-sub{font-size:0.72rem;color:var(--gray);margin-top:0.2rem;}
+
+/* ====== CERTIFICATE ====== */
+.cert-output{display:none;margin-top:1.5rem;}
+.cert-actions{display:flex;gap:0.8rem;margin-bottom:1rem;flex-wrap:wrap;}
+.btn-dl{flex:1;min-width:120px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:var(--navy);border:none;border-radius:8px;padding:0.75rem;font-family:'Barlow',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;transition:all 0.2s;}
+.btn-dl:hover{transform:translateY(-1px);}
+.btn-share{flex:1;min-width:120px;background:#06C755;color:var(--navy);border:none;border-radius:8px;padding:0.75rem;font-family:'Barlow',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;}
+
+/* Copy protection wrapper */
+.cert-protect{position:relative;user-select:none;-webkit-user-select:none;}
+.cert-protect::after{content:'';position:absolute;inset:0;z-index:10;}
+
+/* ====== LANDSCAPE CERT ====== */
+#certLandscape{
+  width:100%;
+  max-width:700px;
+  aspect-ratio:1.414/1;
+  position:relative;
+  background:var(--cream);
+  overflow:hidden;
+  margin:0 auto;
+}
+/* ====== PORTRAIT CERT ====== */
+#certPortrait{
+  width:100%;
+  max-width:495px;
+  aspect-ratio:1/1.414;
+  position:relative;
+  background:var(--cream);
+  overflow:hidden;
+  margin:0 auto;
+  display:none;
+}
+
+/* SHARED CERT STYLES */
+.cert-bg-pattern{position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(201,168,76,0.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 50%,rgba(201,168,76,0.06) 0%,transparent 60%),linear-gradient(135deg,#FBF8F0 0%,#F5EFE0 50%,#FBF8F0 100%);}
+.cert-wm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Cinzel',serif;color:rgba(201,168,76,0.04);font-weight:700;user-select:none;pointer-events:none;white-space:nowrap;}
+.cert-border-o{position:absolute;inset:10px;border:2px solid var(--gold);pointer-events:none;}
+.cert-border-i{position:absolute;inset:15px;border:0.5px solid rgba(201,168,76,0.35);pointer-events:none;}
+
+/* LANDSCAPE layout */
+.l-header{position:absolute;top:10px;left:10px;right:10px;background:linear-gradient(135deg,#0A1628,#1246AA);display:flex;align-items:center;justify-content:space-between;padding:0 3%;}
+.l-body{position:absolute;left:4%;right:4%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.l-footer{position:absolute;left:3%;right:3%;display:flex;align-items:flex-end;justify-content:space-between;}
+
+/* PORTRAIT layout */
+.p-header{position:absolute;top:10px;left:10px;right:10px;background:linear-gradient(135deg,#0A1628,#1246AA);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.p-body{position:absolute;left:6%;right:6%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.p-footer{position:absolute;left:4%;right:4%;display:flex;align-items:flex-end;justify-content:space-between;}
+
+/* QR */
+#qrLandscape,#qrPortrait{background:white;padding:4px;}
+
+/* Verify banner */
+.verify-card{background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:1.5rem;margin-top:1.5rem;}
+.verify-card h3{font-family:'Cinzel',serif;font-size:0.82rem;letter-spacing:0.1em;color:var(--gold);margin-bottom:0.5rem;}
+.verify-card p{font-size:0.82rem;color:var(--gray);line-height:1.6;}
+.verify-row{display:flex;gap:0.5rem;margin-top:0.8rem;}
+.verify-input{flex:1;background:#0D1117;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:0.55rem 0.8rem;color:white;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;}
+.verify-input:focus{outline:none;border-color:var(--gold);}
+.btn-verify{background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:6px;padding:0.55rem 1rem;font-family:'IBM Plex Mono',monospace;font-size:0.78rem;cursor:pointer;white-space:nowrap;}
+.verify-result{margin-top:0.5rem;font-size:0.82rem;}
+.vok{color:#06C755;}
+.vng{color:#E03030;}
+
+@media(max-width:600px){
+  .main{padding:1.5rem 1rem;}
+  .form-row{grid-template-columns:1fr;}
+  .cert-actions{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="https://privatellm.jp" style="display:flex;align-items:center;gap:0.6rem;text-decoration:none;">
+    <img src="PrivateLLMlogo.jpg" alt="PrivateLLM.jp" style="height:32px;width:auto;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--gold);letter-spacing:0.08em;opacity:0.8;">CERT</span>
+  </a>
+  <a href="https://privatellm.jp" class="header-link">← privatellm.jp</a>
+</header>
+
+<div class="main">
+
+  <!-- Steps -->
+  <div class="step-wrap">
+    <div class="step"><div class="step-num active" id="s1">1</div><div class="step-label active">番号入力</div></div>
+    <div class="step"><div class="step-num" id="s2">2</div><div class="step-label" id="sl2">情報確認</div></div>
+    <div class="step"><div class="step-num" id="s3">3</div><div class="step-label" id="sl3">認定証発行</div></div>
+  </div>
+
+  <!-- STEP 1: Input -->
+  <div id="step1">
+    <div class="card">
+      <div class="card-title">STEP 1 — 認定証番号・氏名・生年月日を入力</div>
+
+      <div id="errorMsg" class="error-msg"></div>
+
+      <div class="form-group">
+        <label class="form-label">認定証番号 <span style="color:#E03030;">*</span></label>
+        <input class="form-input mono" id="inCertId" type="text" placeholder="PAPA-3-2026-0001" oninput="onCertIdInput()">
+        <div class="form-hint">試験完了後に表示された番号を入力またはコピペしてください</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">氏名（日本語） <span style="color:#E03030;">*</span></label>
+          <input class="form-input" id="inNameJa" type="text" placeholder="山田 太郎">
+        </div>
+        <div class="form-group">
+          <label class="form-label">NAME（ローマ字） <span style="color:#E03030;">*</span></label>
+          <input class="form-input" id="inNameEn" type="text" placeholder="Taro Yamada">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">生年月日 <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（本人確認用）</span></label>
+        <input class="form-input" id="inDob" type="date">
+        <div class="form-hint">認定証には表示されません。本人確認のみに使用します。</div>
+      </div>
+
+      <!-- Auto-filled section -->
+      <div id="autoFillSection" style="display:none;">
+        <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:1.2rem;margin-bottom:1.2rem;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:#06C755;margin-bottom:0.8rem;">✅ 番号確認済み — 以下の情報が自動入力されました</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">資格グレード <span class="auto-badge">自動</span></label>
+            <input class="form-input readonly" id="inGrade" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">発行日 <span class="auto-badge">自動</span></label>
+            <input class="form-input readonly mono" id="inIssueDate" readonly>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">有効期限 <span class="auto-badge">自動</span></label>
+          <input class="form-input readonly mono" id="inExpDate" readonly>
+        </div>
+      </div>
+
+      <!-- Orientation -->
+      <div style="margin-bottom:1rem;">
+        <label class="form-label" style="margin-bottom:0.8rem;display:block;">認定証の向き</label>
+        <div class="orientation-wrap">
+          <div class="orientation-btn selected" id="btnLandscape" onclick="selectOrientation('landscape')">
+            <div class="orientation-icon">🖼</div>
+            <div class="orientation-label">横型</div>
+            <div class="orientation-sub">A4横 ・ 印刷向き</div>
+          </div>
+          <div class="orientation-btn" id="btnPortrait" onclick="selectOrientation('portrait')">
+            <div class="orientation-icon">📜</div>
+            <div class="orientation-label">縦型</div>
+            <div class="orientation-sub">A4縦 ・ スマホ向き</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="btnGenerate" onclick="generateCert()">認定証を発行する →</button>
+    </div>
+  </div>
+
+  <!-- CERT OUTPUT -->
+  <div class="cert-output" id="certOutput">
+    <div class="card">
+      <div class="card-title">STEP 3 — 認定証</div>
+
+      <div class="cert-actions">
+        <button class="btn-dl" onclick="downloadCert()">⬇ PNG 保存</button>
+        <button class="btn-dl" onclick="printCert()" style="background:linear-gradient(135deg,#1A2E5A,#1246AA);color:white;">🖨 印刷する</button>
+        <button class="btn-share" onclick="shareCert()">📤 シェア</button>
+      </div>
+
+      <div class="cert-protect" oncontextmenu="return false;" ondragstart="return false;">
+        <!-- LANDSCAPE -->
+        <div id="certLandscape">
+          <div class="cert-bg-pattern"></div>
+          <div class="cert-wm" style="font-size:100px;">PAPA</div>
+          <div class="cert-border-o"></div>
+          <div class="cert-border-i"></div>
+          <!-- corners -->
+          <svg style="position:absolute;top:6px;left:6px;width:36px;height:36px;" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+          <svg style="position:absolute;top:6px;right:6px;width:36px;height:36px;transform:scaleX(-1);" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+          <svg style="position:absolute;bottom:6px;left:6px;width:36px;height:36px;transform:scaleY(-1);" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+          <svg style="position:absolute;bottom:6px;right:6px;width:36px;height:36px;transform:scale(-1,-1);" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+
+          <div class="l-header" style="height:13%;top:10px;">
+            <div>
+              <div style="font-family:'Cinzel',serif;font-size:clamp(6px,1.1vw,9px);color:rgba(255,255,255,0.7);letter-spacing:0.15em;">PRIVATE AI PROMOTION ASSOCIATION</div>
+              <div style="font-family:'Noto Serif JP',serif;font-size:clamp(5px,0.9vw,7px);color:rgba(255,255,255,0.45);margin-top:1px;">プライベートAI推進協会（PAPA）</div>
+            </div>
+            <div style="font-family:'Cinzel',serif;font-size:clamp(8px,1.6vw,13px);font-weight:700;color:#E8C97A;letter-spacing:0.1em;">privatellm.jp</div>
+          </div>
+          <!-- gold line -->
+          <div style="position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,#E8C97A,#C9A84C,transparent);" id="lGoldLine"></div>
+
+          <div class="l-body" style="top:17%;bottom:14%;">
+            <div style="font-family:'Cinzel',serif;font-size:clamp(5px,0.9vw,7px);letter-spacing:0.35em;color:#8B6914;margin-bottom:1.5%;">CERTIFICATE OF ACHIEVEMENT</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(7px,1.1vw,10px);color:#1A2E5A;letter-spacing:0.08em;text-align:center;line-height:1.5;margin-bottom:2%;">この証は、下記の者が所定の試験に合格し所定の資格を取得したことを証明します</div>
+            <div style="width:15%;height:1px;background:linear-gradient(90deg,transparent,#C9A84C,transparent);margin-bottom:2%;"></div>
+            <div style="font-family:'Cinzel',serif;font-size:clamp(5px,0.8vw,6.5px);letter-spacing:0.3em;color:#6B7280;margin-bottom:1%;">CERTIFIED HOLDER</div>
+            <div id="lName" style="font-family:'Noto Serif JP',serif;font-size:clamp(14px,3.5vw,28px);font-weight:700;color:#0A1628;letter-spacing:0.06em;">山田 太郎</div>
+            <div id="lNameEn" style="font-family:'Cormorant Garamond',serif;font-size:clamp(8px,1.3vw,11px);font-style:italic;color:#6B7280;margin-top:0.5%;letter-spacing:0.04em;">Taro Yamada</div>
+            <div style="width:25%;height:0.5px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.5),transparent);margin:2% auto;"></div>
+            <div style="background:linear-gradient(135deg,#0A1628,#1246AA);border:1px solid #C9A84C;border-radius:3px;padding:1.5% 4%;text-align:center;">
+              <div id="lGradeEn" style="font-family:'Cinzel',serif;font-size:clamp(7px,1.3vw,11px);font-weight:700;color:#E8C97A;letter-spacing:0.08em;">PrivateLLM Architect — Level 3</div>
+              <div id="lGradeJa" style="font-family:'Noto Serif JP',serif;font-size:clamp(5px,0.95vw,8px);color:rgba(255,255,255,0.75);margin-top:1px;">PrivateLLM構築士 3級</div>
+            </div>
+            <div id="lCertText" style="font-family:'Noto Serif JP',serif;font-size:clamp(5px,0.85vw,7px);color:#374151;text-align:center;line-height:2;letter-spacing:0.04em;margin-top:2%;">
+              上記の者は プライベートAI推進協会（PAPA）が実施する検定試験において所定の成績を収め<br>本資格の認定要件を満たしたと認定する
+            </div>
+          </div>
+
+          <div class="l-footer" style="bottom:10px;bottom:10px;height:12%;">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.7vw,6px);color:#6B7280;letter-spacing:0.1em;">ISSUED DATE</div>
+              <div id="lIssueDate" style="font-family:'Cormorant Garamond',serif;font-size:clamp(8px,1.4vw,12px);color:#0A1628;font-weight:600;">2026.02.23</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.7vw,6px);color:#6B7280;letter-spacing:0.1em;margin-top:3px;">VALID UNTIL</div>
+              <div id="lExpDate" style="font-family:'Cormorant Garamond',serif;font-size:clamp(7px,1.1vw,10px);color:#0A1628;">2028.02.22</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:clamp(60px,12vw,90px);height:1px;background:#0A1628;margin:0 auto 2px;"></div>
+              <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(7px,1.2vw,10px);color:#0A1628;">Hideo Takahashi</div>
+              <div style="font-family:'Noto Serif JP',serif;font-size:clamp(4px,0.75vw,6px);color:#6B7280;margin-top:1px;">代表 / Representative Director</div>
+              <div style="width:clamp(28px,6vw,50px);height:clamp(28px,6vw,50px);border-radius:50%;background:linear-gradient(135deg,#0A1628,#1246AA);border:1.5px solid #C9A84C;display:flex;align-items:center;justify-content:center;margin:2px auto 0;">
+                <div style="font-family:'Cinzel',serif;font-size:clamp(3px,0.6vw,5px);color:#E8C97A;text-align:center;line-height:1.4;">PAPA<br>認定<br>OFFICIAL</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div id="qrLandscape" style="margin-left:auto;margin-bottom:2px;"></div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.7vw,6px);color:#6B7280;letter-spacing:0.08em;">CERT. NO.</div>
+              <div id="lCertId" style="font-family:'IBM Plex Mono',monospace;font-size:clamp(6px,1vw,8px);color:#0A1628;font-weight:600;">PAPA-3-2026-0001</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.6vw,5px);color:#8B6914;margin-top:1px;">cert.privatellm.jp で確認可</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PORTRAIT -->
+        <div id="certPortrait" style="display:none;">
+          <div class="cert-bg-pattern"></div>
+          <div class="cert-wm" style="font-size:80px;writing-mode:initial;">PAPA</div>
+          <div class="cert-border-o"></div>
+          <div class="cert-border-i"></div>
+          <svg style="position:absolute;top:6px;left:6px;width:36px;height:36px;" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+          <svg style="position:absolute;top:6px;right:6px;width:36px;height:36px;transform:scaleX(-1);" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+          <svg style="position:absolute;bottom:6px;left:6px;width:36px;height:36px;transform:scaleY(-1);" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+          <svg style="position:absolute;bottom:6px;right:6px;width:36px;height:36px;transform:scale(-1,-1);" viewBox="0 0 36 36" fill="none"><path d="M2 2L2 14M2 2L14 2" stroke="#C9A84C" stroke-width="1.5"/><circle cx="2" cy="2" r="2" fill="#C9A84C"/></svg>
+
+          <div class="p-header" style="height:11%;top:10px;">
+            <div style="font-family:'Cinzel',serif;font-size:clamp(6px,1.5vw,9px);color:rgba(255,255,255,0.7);letter-spacing:0.12em;text-align:center;">PRIVATE AI PROMOTION ASSOCIATION</div>
+            <div style="font-family:'Cinzel',serif;font-size:clamp(8px,2vw,13px);font-weight:700;color:#E8C97A;letter-spacing:0.1em;margin-top:2px;">privatellm.jp</div>
+          </div>
+          <div style="position:absolute;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#C9A84C,#E8C97A,#C9A84C,transparent);" id="pGoldLine"></div>
+
+          <div class="p-body" style="top:14%;bottom:16%;">
+            <div style="font-family:'Cinzel',serif;font-size:clamp(5px,1vw,7px);letter-spacing:0.3em;color:#8B6914;margin-bottom:2%;">CERTIFICATE OF ACHIEVEMENT</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:clamp(7px,1.3vw,10px);color:#1A2E5A;text-align:center;line-height:1.6;margin-bottom:3%;">この証は、下記の者が所定の試験に合格し<br>所定の資格を取得したことを証明します</div>
+            <div style="width:30%;height:1px;background:linear-gradient(90deg,transparent,#C9A84C,transparent);margin-bottom:3%;"></div>
+            <div style="font-family:'Cinzel',serif;font-size:clamp(5px,0.9vw,7px);letter-spacing:0.25em;color:#6B7280;margin-bottom:1.5%;">CERTIFIED HOLDER</div>
+            <div id="pName" style="font-family:'Noto Serif JP',serif;font-size:clamp(16px,4vw,30px);font-weight:700;color:#0A1628;letter-spacing:0.06em;text-align:center;">山田 太郎</div>
+            <div id="pNameEn" style="font-family:'Cormorant Garamond',serif;font-size:clamp(9px,1.8vw,13px);font-style:italic;color:#6B7280;margin-top:1%;letter-spacing:0.04em;">Taro Yamada</div>
+            <div style="width:40%;height:0.5px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.5),transparent);margin:3% auto;"></div>
+            <div style="background:linear-gradient(135deg,#0A1628,#1246AA);border:1px solid #C9A84C;border-radius:4px;padding:2.5% 6%;text-align:center;width:90%;">
+              <div id="pGradeEn" style="font-family:'Cinzel',serif;font-size:clamp(8px,1.6vw,12px);font-weight:700;color:#E8C97A;letter-spacing:0.06em;">PrivateLLM Architect — Level 3</div>
+              <div id="pGradeJa" style="font-family:'Noto Serif JP',serif;font-size:clamp(7px,1.2vw,9px);color:rgba(255,255,255,0.75);margin-top:2px;">PrivateLLM構築士 3級</div>
+            </div>
+            <div style="font-family:'Noto Serif JP',serif;font-size:clamp(6px,1vw,8px);color:#374151;text-align:center;line-height:2;letter-spacing:0.04em;margin-top:3%;">上記の者は プライベートAI推進協会（PAPA）が<br>実施する検定試験において所定の成績を収め<br>本資格の認定要件を満たしたと認定する</div>
+            <!-- QR portrait -->
+            <div style="display:flex;align-items:center;gap:4%;margin-top:4%;width:90%;">
+              <div id="qrPortrait" style="flex-shrink:0;"></div>
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.8vw,6px);color:#6B7280;">CERT. NO.</div>
+                <div id="pCertId" style="font-family:'IBM Plex Mono',monospace;font-size:clamp(7px,1.2vw,9px);color:#0A1628;font-weight:600;">PAPA-3-2026-0001</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.7vw,5.5px);color:#8B6914;margin-top:2px;">cert.privatellm.jp で確認可</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.7vw,5.5px);color:#8B6914;">privatellm.jp</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-footer" style="bottom:10px;height:13%;">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.8vw,6px);color:#6B7280;">ISSUED DATE</div>
+              <div id="pIssueDate" style="font-family:'Cormorant Garamond',serif;font-size:clamp(9px,1.6vw,12px);color:#0A1628;font-weight:600;">2026.02.23</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:clamp(4px,0.8vw,6px);color:#6B7280;margin-top:2px;">VALID UNTIL</div>
+              <div id="pExpDate" style="font-family:'Cormorant Garamond',serif;font-size:clamp(8px,1.3vw,10px);color:#0A1628;">2028.02.22</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:clamp(50px,10vw,80px);height:1px;background:#0A1628;margin:0 auto 2px;"></div>
+              <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(8px,1.4vw,11px);color:#0A1628;">Hideo Takahashi</div>
+              <div style="font-family:'Noto Serif JP',serif;font-size:clamp(4px,0.8vw,7px);color:#6B7280;margin-top:1px;">代表 / Director</div>
+              <div style="width:clamp(30px,6vw,48px);height:clamp(30px,6vw,48px);border-radius:50%;background:linear-gradient(135deg,#0A1628,#1246AA);border:1.5px solid #C9A84C;display:flex;align-items:center;justify-content:center;margin:2px auto 0;">
+                <div style="font-family:'Cinzel',serif;font-size:clamp(3px,0.55vw,4.5px);color:#E8C97A;text-align:center;line-height:1.4;">PAPA<br>認定<br>OFFICIAL</div>
+              </div>
+            </div>
+            <div></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem;padding:0.8rem;background:rgba(255,255,255,0.02);border-radius:8px;font-size:0.78rem;color:var(--gray);line-height:1.7;">
+        ⚠ この認定証は個人のものです。第三者への譲渡・転売は禁止されています。<br>
+        採用担当者・取引先は <strong style="color:var(--gold);">cert.privatellm.jp</strong> で認定証番号を照合して真偽確認できます。
+      </div>
+    </div>
+
+    <!-- Verify banner -->
+    <div class="verify-card">
+      <h3>🔍 CERTIFICATE VERIFICATION</h3>
+      <p>採用担当者・取引先の方へ。認定証番号を入力して真偽を確認できます。</p>
+      <div class="verify-row">
+        <input class="verify-input" id="verifyInput" placeholder="PAPA-3-2026-0001">
+        <button class="btn-verify" onclick="verifyCert()">確認する</button>
+      </div>
+      <div class="verify-result" id="verifyResult"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const GRADES = {
+  'AIB':  { en:'AI Basic Certification', ja:'AI基本検定', price:3000 },
+  'CGP':  { en:'ChatGPT Practitioner — Beginner', ja:'ChatGPT活用初級', price:5000 },
+  '3':    { en:'PrivateLLM Architect — Level 3', ja:'PrivateLLM構築士 3級', price:8000 },
+  '2':    { en:'PrivateLLM Architect — Level 2', ja:'PrivateLLM構築士 2級', price:15000 },
+  '1':    { en:'PrivateLLM Architect — Level 1', ja:'PrivateLLM構築士 1級', price:30000 },
+  'INS':  { en:'PrivateLLM Certified Instructor', ja:'PrivateLLM 認定講師', price:50000 },
+};
+
+let orientation = 'landscape';
+let qrLandscape = null;
+let qrPortrait = null;
+
+// URL params auto-fill
+const params = new URLSearchParams(window.location.search);
+if (params.get('cert_id')) {
+  document.getElementById('inCertId').value = params.get('cert_id');
+  onCertIdInput();
+}
+
+function selectOrientation(o) {
+  orientation = o;
+  document.getElementById('btnLandscape').className = 'orientation-btn' + (o==='landscape'?' selected':'');
+  document.getElementById('btnPortrait').className = 'orientation-btn' + (o==='portrait'?' selected':'');
+}
+
+function parseCertId(id) {
+  // PAPA-{grade}-{year}-{seq}
+  const parts = id.toUpperCase().trim().split('-');
+  if (parts.length < 4 || parts[0] !== 'PAPA') return null;
+  const gradeCode = parts.slice(1, parts.length-2).join('-');
+  const year = parts[parts.length-2];
+  if (!GRADES[gradeCode]) return null;
+  return { gradeCode, year, grade: GRADES[gradeCode] };
+}
+
+function onCertIdInput() {
+  const val = document.getElementById('inCertId').value;
+  const parsed = parseCertId(val);
+  const sec = document.getElementById('autoFillSection');
+  if (parsed) {
+    const today = new Date();
+    const exp = new Date(today); exp.setFullYear(exp.getFullYear()+2);
+    document.getElementById('inGrade').value = parsed.grade.ja;
+    document.getElementById('inIssueDate').value = fmt(today);
+    document.getElementById('inExpDate').value = fmt(exp);
+    sec.style.display = 'block';
+  } else {
+    sec.style.display = 'none';
+  }
+}
+
+function fmt(d) {
+  return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function generateCert() {
+  const certId = document.getElementById('inCertId').value.trim();
+  const nameJa = document.getElementById('inNameJa').value.trim();
+  const nameEn = document.getElementById('inNameEn').value.trim();
+  const dob = document.getElementById('inDob').value;
+  const errEl = document.getElementById('errorMsg');
+
+  errEl.style.display = 'none';
+  if (!certId) { showErr('認定証番号を入力してください'); return; }
+  if (!parseCertId(certId)) { showErr('認定証番号の形式が正しくありません（例：PAPA-3-2026-0001）'); return; }
+  if (!nameJa) { showErr('氏名（日本語）を入力してください'); return; }
+  if (!nameEn) { showErr('NAME（ローマ字）を入力してください'); return; }
+  if (!dob) { showErr('生年月日を入力してください'); return; }
+
+  const parsed = parseCertId(certId);
+  const today = new Date();
+  const exp = new Date(today); exp.setFullYear(exp.getFullYear()+2);
+  const issueDateStr = fmt(today);
+  const expDateStr = fmt(exp);
+  const verifyUrl = `https://cert.privatellm.jp/?verify=${encodeURIComponent(certId)}`;
+
+  // Fill landscape
+  document.getElementById('lName').textContent = nameJa;
+  document.getElementById('lNameEn').textContent = nameEn;
+  document.getElementById('lGradeEn').textContent = parsed.grade.en;
+  document.getElementById('lGradeJa').textContent = parsed.grade.ja;
+  document.getElementById('lIssueDate').textContent = issueDateStr;
+  document.getElementById('lExpDate').textContent = expDateStr;
+  document.getElementById('lCertId').textContent = certId;
+
+  // Position gold line for landscape
+  const lh = document.getElementById('certLandscape');
+  const gl = document.getElementById('lGoldLine');
+  gl.style.top = '13%';
+
+  // Fill portrait
+  document.getElementById('pName').textContent = nameJa;
+  document.getElementById('pNameEn').textContent = nameEn;
+  document.getElementById('pGradeEn').textContent = parsed.grade.en;
+  document.getElementById('pGradeJa').textContent = parsed.grade.ja;
+  document.getElementById('pIssueDate').textContent = issueDateStr;
+  document.getElementById('pExpDate').textContent = expDateStr;
+  document.getElementById('pCertId').textContent = certId;
+
+  // Position gold line for portrait
+  const pg = document.getElementById('pGoldLine');
+  pg.style.top = '11%';
+
+  // Show correct orientation
+  document.getElementById('certLandscape').style.display = orientation==='landscape' ? 'block' : 'none';
+  document.getElementById('certPortrait').style.display = orientation==='portrait' ? 'block' : 'none';
+
+  // Generate QR codes
+  generateQR('qrLandscape', verifyUrl, orientation==='landscape' ? 36 : 0);
+  generateQR('qrPortrait', verifyUrl, orientation==='portrait' ? 44 : 0);
+
+  // Show output
+  document.getElementById('certOutput').style.display = 'block';
+  document.getElementById('certOutput').scrollIntoView({behavior:'smooth', block:'start'});
+  // GASに発行完了を通知
+  const _dob = document.getElementById('inDob').value;
+  markIssuedToGAS(certId, nameJa, nameEn, _dob);
+
+  // Update steps
+  document.getElementById('s2').className = 'step-num done';
+  document.getElementById('s3').className = 'step-num active';
+  document.getElementById('sl2').className = 'step-label done';
+  document.getElementById('sl3').className = 'step-label active';
+}
+
+function generateQR(containerId, url, size) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  if (size > 0) {
+    try {
+      new QRCode(el, { text: url, width: size, height: size, colorDark:'#0A1628', colorLight:'#FFFFFF', correctLevel: QRCode.CorrectLevel.M });
+    } catch(e) {
+      el.style.width = size+'px'; el.style.height = size+'px';
+      el.style.background = 'white';
+      el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
+      el.style.fontSize = (size*0.5)+'px';
+      el.textContent = '⬛';
+    }
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+function downloadCert() {
+  alert('本番実装：html2canvasでPNG/PDFとしてダウンロード可能です。\n現在はブラウザの印刷機能（Ctrl+P）をお使いください。');
+}
+
+function printCert() {
+  window.print();
+}
+
+function shareCert() {
+  const certId = document.getElementById('inCertId').value.trim();
+  const url = `https://cert.privatellm.jp/?verify=${encodeURIComponent(certId)}`;
+  if (navigator.share) {
+    navigator.share({ title: 'PrivateLLM 認定証', text: `認定証番号：${certId}`, url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => alert('URLをコピーしました:\n' + url));
+  }
+}
+
+async function verifyCert() {
+  const val = document.getElementById('verifyInput').value.trim();
+  const res = document.getElementById('verifyResult');
+  if (!val) { res.innerHTML = ''; return; }
+  res.innerHTML = '<span style="color:#9CA3AF;">照合中...</span>';
+  const data = await verifyCertFromGAS(val);
+  if (data && data.ok && data.valid) {
+    res.innerHTML = `<span class="vok">✅ 有効な認定証です｜${data.nameJa}（${data.nameEn}）｜${data.grade}｜発行日：${data.issued}｜有効期限：${data.expires}</span>`;
+  } else if (data && data.ok && !data.valid) {
+    res.innerHTML = `<span class="vng">❌ ${data.message || 'この認定証番号は見つかりません'}</span>`;
+  } else {
+    // GASが使えない場合はローカルで簡易チェック
+    const parsed = parseCertId(val);
+    if (parsed) {
+      res.innerHTML = `<span class="vok">✅ 有効な形式の認定証番号です｜${parsed.grade.ja}｜発行年：${parsed.year}</span>`;
+    } else {
+      res.innerHTML = `<span class="vng">❌ この番号は認識できません</span>`;
+    }
+  }
+}
+
+// Auto-verify from URL
+if (params.get('verify')) {
+  document.getElementById('verifyInput').value = params.get('verify');
+  setTimeout(verifyCert, 500);
+}
+</script>
+
+<script>
+// ===== GAS連携 =====
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw1E931BEVOLqSPyX_LdS6aTuw997k8t9d639Tfvcz5EUjcsrkmokJ2RBdnFWNF-brT/exec";
+
+// 認定証データ取得（決済確認＋グレード・日付の自動入力）
+async function fetchCertFromGAS(certId, dob) {
+  try {
+    const url = GAS_URL + "?action=getCert&cert_id=" + encodeURIComponent(certId) + "&dob=" + encodeURIComponent(dob||"");
+    const res = await fetch(url);
+    const data = await res.json();
+    return data;
+  } catch(e) {
+    console.warn("GASデータ取得エラー:", e);
+    return null;
+  }
+}
+
+// 発行完了をGASに通知
+async function markIssuedToGAS(certId, nameJa, nameEn, dob) {
+  try {
+    await fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type": "text/plain"},
+      body: JSON.stringify({
+        action: "issueCert",
+        cert_id: certId,
+        name_ja: nameJa,
+        name_en: nameEn,
+        dob: dob
+      })
+    });
+    console.log("GAS発行記録:", certId);
+  } catch(e) {
+    console.warn("GAS発行記録エラー:", e);
+  }
+}
+
+// 番号照合（verifyフォーム用）
+async function verifyCertFromGAS(certId) {
+  try {
+    const url = GAS_URL + "?action=verify&cert_id=" + encodeURIComponent(certId);
+    const res = await fetch(url);
+    return await res.json();
+  } catch(e) {
+    return { ok: false, valid: false, error: "照合に失敗しました" };
+  }
+}
+</script>
+<!-- フッター -->
+<div style="text-align:center;padding:1.5rem;border-top:1px solid rgba(255,255,255,0.06);margin-top:2rem;display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;">
+  <a href="https://privatellm.jp" style="font-size:0.78rem;color:#8892A4;text-decoration:none;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8892A4'">← privatellm.jp</a>
+  <a href="tokusho.html" style="font-size:0.78rem;color:#8892A4;text-decoration:none;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8892A4'">特定商取引法に基づく表記</a>
+  <span style="font-size:0.78rem;color:#4A5568;">© 2026 プライベートAI推進協会（PAPA）</span>
+</div>
+</body>
+</html>
