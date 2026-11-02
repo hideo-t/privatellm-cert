@@ -177,18 +177,20 @@ body{background:linear-gradient(160deg,#0D1F3C 0%,#0A1628 100%);color:white;font
 
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">氏名（日本語） <span style="color:#E03030;">*</span></label>
+          <label class="form-label">氏名（日本語） <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（認定証に印字）</span></label>
           <input class="form-input" id="inNameJa" type="text" placeholder="山田 太郎">
         </div>
         <div class="form-group">
-          <label class="form-label">NAME（ローマ字） <span style="color:#E03030;">*</span></label>
+          <label class="form-label">NAME（ローマ字） <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（認定証に印字）</span></label>
           <input class="form-input" id="inNameEn" type="text" placeholder="Taro Yamada">
         </div>
       </div>
+      <div class="form-hint" style="margin:-0.4rem 0 1rem;">認定証に印字される氏名です。本人確認には使いません（本人確認は生年月日のみ）。</div>
+      <div id="reissueNote" style="display:none;background:rgba(6,199,85,0.1);border:1px solid rgba(6,199,85,0.3);border-radius:8px;padding:0.7rem 1rem;margin:0 0 1rem;font-size:0.82rem;color:#06C755;">✅ 登録済みの氏名を自動入力しました（再発行）。番号と生年月日だけで発行できます。</div>
 
       <div class="form-group">
         <label class="form-label">生年月日 <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（本人確認用）</span></label>
-        <input class="form-input" id="inDob" type="date">
+        <input class="form-input" id="inDob" type="date" onchange="tryReissueAutofill()">
         <div class="form-hint">認定証には表示されません。本人確認のみに使用します。</div>
       </div>
 
@@ -439,9 +441,30 @@ function onCertIdInput() {
     document.getElementById('inIssueDate').value = fmt(today);
     document.getElementById('inExpDate').value = fmt(exp);
     sec.style.display = 'block';
+    tryReissueAutofill();
   } else {
     sec.style.display = 'none';
   }
+}
+
+// 再発行：番号＋生年月日が揃えば、登録済みの氏名を自動入力（氏名の再入力を省く）
+let _reissueKey = '';
+async function tryReissueAutofill() {
+  const certId = document.getElementById('inCertId').value.trim();
+  const dob = document.getElementById('inDob').value;
+  if (!parseCertId(certId) || !dob) return;
+  const key = certId + '|' + dob;
+  if (key === _reissueKey) return;   // 同じ組合せの重複照会を防ぐ
+  _reissueKey = key;
+  try {
+    const data = await fetchCertFromGAS(certId, dob);
+    if (data && data.ok && data.name_ja) {
+      document.getElementById('inNameJa').value = data.name_ja;
+      if (data.name_en) document.getElementById('inNameEn').value = data.name_en;
+      const note = document.getElementById('reissueNote');
+      if (note) note.style.display = 'block';
+    }
+  } catch(e) { /* 取得失敗時は手入力のまま */ }
 }
 
 function fmt(d) {
