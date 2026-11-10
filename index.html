@@ -7,6 +7,18 @@
 <meta name="description" content="PrivateLLM構築士・AI基本検定の認定証を発行するサイト。認定証番号・氏名・生年月日を入力して認定証を受け取れます。 | privatellm.jp">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cinzel:wght@400;600;700&family=Barlow:wght@400;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zumer/snapdom@3.7.4/dist/snapdom.js"></script>
+<style>
+/* 印刷時は認定証だけを1枚に（それ以外は印刷しない）→ ブラウザの「PDFに保存」で認定証PDF */
+@media print {
+  body * { visibility: hidden !important; }
+  #certLandscape, #certLandscape *, #certPortrait, #certPortrait * { visibility: visible !important; }
+  #certLandscape, #certPortrait { position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important; box-shadow: none !important; }
+  .cert-actions { display: none !important; }
+  @page { margin: 10mm; }
+  html, body { background: #fff !important; }
+}
+</style>
 <style>
 :root{
   --navy:#0A1628;--blue:#1246AA;--cyan:#00C8E0;
@@ -14,12 +26,12 @@
   --cream:#FBF8F0;--warm:#F5EFE0;--gray:#6B7280;--light:#EEF4FF;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:#0D1117;color:white;font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
+body{background:linear-gradient(160deg,#0D1F3C 0%,#0A1628 100%);color:white;font-family:'Noto Sans JP',sans-serif;min-height:100vh;}
 
 /* ====== HEADER ====== */
 .site-header{background:rgba(10,22,40,0.95);border-bottom:1px solid rgba(201,168,76,0.2);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);}
-.site-logo{font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;color:var(--gold);text-decoration:none;letter-spacing:0.05em;}
-.site-logo span{color:rgba(255,255,255,0.5);font-size:0.7em;}
+.site-logo{display:flex;align-items:center;gap:0.5rem;text-decoration:none;}
+.site-logo img{height:32px;width:auto;}
 .header-link{font-size:0.82rem;color:rgba(255,255,255,0.5);text-decoration:none;}
 .header-link:hover{color:var(--gold);}
 
@@ -146,7 +158,7 @@ body{background:#0D1117;color:white;font-family:'Noto Sans JP',sans-serif;min-he
 <body>
 
 <header class="site-header">
-  <a href="https://privatellm.jp" class="site-logo">cert.privatellm<span>.jp</span></a>
+  <a href="https://privatellm.jp" style="font-family:'Cinzel',serif;font-weight:700;font-size:1.1rem;color:var(--gold);text-decoration:none;letter-spacing:0.05em;">cert.privatellm<span style="color:rgba(255,255,255,0.5);font-size:0.7em;">.jp</span></a>
   <a href="https://privatellm.jp" class="header-link">← privatellm.jp</a>
 </header>
 
@@ -174,18 +186,20 @@ body{background:#0D1117;color:white;font-family:'Noto Sans JP',sans-serif;min-he
 
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">氏名（日本語） <span style="color:#E03030;">*</span></label>
+          <label class="form-label">氏名（日本語） <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（認定証に印字）</span></label>
           <input class="form-input" id="inNameJa" type="text" placeholder="山田 太郎">
         </div>
         <div class="form-group">
-          <label class="form-label">NAME（ローマ字） <span style="color:#E03030;">*</span></label>
+          <label class="form-label">NAME（ローマ字） <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（認定証に印字）</span></label>
           <input class="form-input" id="inNameEn" type="text" placeholder="Taro Yamada">
         </div>
       </div>
+      <div class="form-hint" style="margin:-0.4rem 0 1rem;">認定証に印字される氏名です。本人確認には使いません（本人確認は生年月日のみ）。</div>
+      <div id="reissueNote" style="display:none;background:rgba(6,199,85,0.1);border:1px solid rgba(6,199,85,0.3);border-radius:8px;padding:0.7rem 1rem;margin:0 0 1rem;font-size:0.82rem;color:#06C755;">✅ 登録済みの氏名を自動入力しました（再発行）。番号と生年月日だけで発行できます。</div>
 
       <div class="form-group">
         <label class="form-label">生年月日 <span style="color:#E03030;">*</span> <span style="font-size:0.72rem;color:var(--gray);">（本人確認用）</span></label>
-        <input class="form-input" id="inDob" type="date">
+        <input class="form-input" id="inDob" type="date" onchange="tryReissueAutofill()">
         <div class="form-hint">認定証には表示されません。本人確認のみに使用します。</div>
       </div>
 
@@ -436,9 +450,30 @@ function onCertIdInput() {
     document.getElementById('inIssueDate').value = fmt(today);
     document.getElementById('inExpDate').value = fmt(exp);
     sec.style.display = 'block';
+    tryReissueAutofill();
   } else {
     sec.style.display = 'none';
   }
+}
+
+// 再発行：番号＋生年月日が揃えば、登録済みの氏名を自動入力（氏名の再入力を省く）
+let _reissueKey = '';
+async function tryReissueAutofill() {
+  const certId = document.getElementById('inCertId').value.trim();
+  const dob = document.getElementById('inDob').value;
+  if (!parseCertId(certId) || !dob) return;
+  const key = certId + '|' + dob;
+  if (key === _reissueKey) return;   // 同じ組合せの重複照会を防ぐ
+  _reissueKey = key;
+  try {
+    const data = await fetchCertFromGAS(certId, dob);
+    if (data && data.ok && data.name_ja) {
+      document.getElementById('inNameJa').value = data.name_ja;
+      if (data.name_en) document.getElementById('inNameEn').value = data.name_en;
+      const note = document.getElementById('reissueNote');
+      if (note) note.style.display = 'block';
+    }
+  } catch(e) { /* 取得失敗時は手入力のまま */ }
 }
 
 function fmt(d) {
@@ -538,8 +573,31 @@ function showErr(msg) {
   el.scrollIntoView({behavior:'smooth'});
 }
 
-function downloadCert() {
-  alert('本番実装：html2canvasでPNG/PDFとしてダウンロード可能です。\n現在はブラウザの印刷機能（Ctrl+P）をお使いください。');
+async function downloadCert() {
+  const certId = (document.getElementById('inCertId').value || 'certificate').trim();
+  const el = document.getElementById(orientation === 'landscape' ? 'certLandscape' : 'certPortrait');
+  if (!el || el.offsetParent === null) { showErr('先に「認定証を発行」して認定証を表示してください'); return; }
+  if (typeof snapdom === 'undefined') {
+    showErr('画像化ライブラリを読み込めませんでした。通信環境をご確認のうえ、ページを再読み込みしてください。');
+    return;
+  }
+  const btn = document.querySelector('[onclick="downloadCert()"]');
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '画像を作成中…'; btn.style.pointerEvents = 'none'; }
+  try {
+    // snapDOM: 擬似要素・グラデ・aspect-ratio・Webフォントを正しく再現（html2canvasのハングを回避）
+    const img = await snapdom.toPng(el, { scale: 2, backgroundColor: '#FBF8F0', embedFonts: true });
+    const link = document.createElement('a');
+    link.download = certId + '.png';
+    link.href = img.src;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (e) {
+    showErr('画像の作成に失敗しました：' + (e && e.message ? e.message : e));
+  } finally {
+    if (btn) { btn.textContent = label; btn.style.pointerEvents = ''; }
+  }
 }
 
 function printCert() {
@@ -633,5 +691,11 @@ async function verifyCertFromGAS(certId) {
   }
 }
 </script>
+<!-- フッター -->
+<div style="text-align:center;padding:1.5rem;border-top:1px solid rgba(255,255,255,0.06);margin-top:2rem;display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;">
+  <a href="https://privatellm.jp" style="font-size:0.78rem;color:#8892A4;text-decoration:none;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8892A4'">← privatellm.jp</a>
+  <a href="tokusho.html" style="font-size:0.78rem;color:#8892A4;text-decoration:none;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#8892A4'">特定商取引法に基づく表記</a>
+  <span style="font-size:0.78rem;color:#4A5568;">© 2026 プライベートAI推進協会（PAPA）</span>
+</div>
 </body>
 </html>
