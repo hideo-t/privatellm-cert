@@ -7,7 +7,7 @@
 <meta name="description" content="PrivateLLM構築士・AI基本検定の認定証を発行するサイト。認定証番号・氏名・生年月日を入力して認定証を受け取れます。 | privatellm.jp">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Cinzel:wght@400;600;700&family=Barlow:wght@400;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zumer/snapdom@3.7.4/dist/snapdom.js"></script>
 <style>
 /* 印刷時は認定証だけを1枚に（それ以外は印刷しない）→ ブラウザの「PDFに保存」で認定証PDF */
 @media print {
@@ -580,7 +580,7 @@ async function downloadCert() {
   const certId = (document.getElementById('inCertId').value || 'certificate').trim();
   const el = document.getElementById(orientation === 'landscape' ? 'certLandscape' : 'certPortrait');
   if (!el || el.offsetParent === null) { showErr('先に「認定証を発行」して認定証を表示してください'); return; }
-  if (typeof html2canvas === 'undefined') {
+  if (typeof snapdom === 'undefined') {
     showErr('画像化ライブラリを読み込めませんでした。通信環境をご確認のうえ、ページを再読み込みしてください。');
     return;
   }
@@ -588,30 +588,11 @@ async function downloadCert() {
   const label = btn ? btn.textContent : '';
   if (btn) { btn.textContent = '画像を作成中…'; btn.style.pointerEvents = 'none'; }
   try {
-    const canvas = await html2canvas(el, {
-      scale: 2, backgroundColor: '#0A1628', useCORS: true, logging: false,
-      ignoreElements: function(node){ return node.tagName === 'CANVAS' && (node.width === 0 || node.height === 0); },
-      onclone: function(doc){
-        // html2canvasがグラデ背景をパターン化する際に落ちるため、グラデを近似ソリッド色に置換
-        var nodes = doc.querySelectorAll('#certLandscape, #certLandscape *, #certPortrait, #certPortrait *');
-        nodes.forEach(function(n){
-          try {
-            var bi = (doc.defaultView.getComputedStyle(n).backgroundImage) || '';
-            if (bi.indexOf('gradient') === -1) return;
-            var g = bi.toLowerCase(), solid = '';
-            if (/fbf8f0|f5efe0/.test(g)) solid = '#FBF8F0';          // 用紙のクリーム地
-            else if (/c9a84c|e8c97a|e8b84b/.test(g)) solid = '#C9A84C'; // 金ライン・金枠
-            else if (/0a1628|1246aa|1a2e5a/.test(g)) solid = '#13275e'; // 紺パネル
-            n.style.backgroundImage = 'none';
-            if (solid) n.style.backgroundColor = solid;
-          } catch(e){}
-        });
-      }
-    });
-    const dataUrl = canvas.toDataURL('image/png');
+    // snapDOM: 擬似要素・グラデ・aspect-ratio・Webフォントを正しく再現（html2canvasのハングを回避）
+    const img = await snapdom.toPng(el, { scale: 2, backgroundColor: '#FBF8F0', embedFonts: true });
     const link = document.createElement('a');
     link.download = certId + '.png';
-    link.href = dataUrl;
+    link.href = img.src;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
